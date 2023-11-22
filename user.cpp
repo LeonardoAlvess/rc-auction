@@ -62,7 +62,7 @@ int valid_uid(string uid) {return uid.size() == 6 && all_of(uid.begin(), uid.end
 
 int valid_password(string pass) { return pass.size() == 8 && all_of(pass.begin(), pass.end(), ::isalnum);}
 
-void login_process(vector<string> args, string log_uid, string log_pass){
+void login_process(vector<string> args, string& log_uid, string& log_pass){
 
   string uid = args[1];
   string password = args[2];
@@ -79,7 +79,25 @@ void login_process(vector<string> args, string log_uid, string log_pass){
 
   //sendto/receivto
   //se pintar guardar uid e pass
+  log_uid = uid;                          //for now
   cout << "Login Successful\n";
+}
+
+void logout_process(string& log_uid, string& log_pass){
+  //sendinfo to server
+
+  //for now
+  log_uid = "";
+  log_pass = "";
+  return;
+}
+
+void unregister_process(string& log_uid, string& log_pass){
+  //send info to server
+
+  //for now
+  log_uid = "";
+  log_pass = "";
 }
 
 
@@ -111,19 +129,53 @@ int main(int argc, char *argv[]){ //adicionar args e processar
       switch (code)
       {
       case LOGIN:
-        if (args.size() != 3) cout << "ERROR: WRONG NUMBER OF ARGUMENTS\n";
+        if (args.size() != 3){
+          cout << "ERROR: WRONG NUMBER OF ARGUMENTS\n";
+          break;
+        }
+
+        if (uid != ""){  
+          cout << "ERROR: USER "+uid+" ALREADY LOGGED IN\n";
+          break;
+        }
+
         login_process(args,uid,pass);
         break;
-      
+
       case LOGOUT:
-        cout << "logout\n";
+        if (args.size() != 1){
+          cout << "ERROR: WRONG NUMBER OF ARGUMENTS\n";
+          break;
+        }
+
+        if (uid == ""){  
+          cout << "ERROR: NO USER LOGGED IN\n";
+          break;
+        }
+
+        logout_process(uid,pass);
         break;
 
       case UNREGISTER:
-        cout << "unreg\n";
+        if (args.size() != 1){
+          cout << "ERROR: WRONG NUMBER OF ARGUMENTS\n";
+          break;
+        }
+
+        if (uid == ""){  
+          cout << "ERROR: NO USER LOGGED IN\n";
+          break;
+        }
+
+        unregister_process(uid, pass);
+
         break;
 
       case EXIT:
+        if (uid != ""){  
+          cout << "ERROR: USER "+uid+" STILL LOGGED IN, PLEASE USE LOGOUT COMMAND\n";
+          break;
+        }
         stay = 0;
         cout << "closing...\n";
         break;
