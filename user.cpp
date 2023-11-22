@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cctype>
 #include <algorithm>
+#include <vector>
 using namespace std;
 
 #define FALSE 0
@@ -61,24 +62,18 @@ int valid_uid(string uid) {return uid.size() == 6 && all_of(uid.begin(), uid.end
 
 int valid_password(string pass) { return pass.size() == 8 && all_of(pass.begin(), pass.end(), ::isalnum);}
 
-void login_process(istringstream &iss, string log_uid, string log_pass){
-  string uid, password,buffer;
-  string test = iss.str();
-  iss >> uid;
+void login_process(vector<string> args, string log_uid, string log_pass){
+
+  string uid = args[1];
+  string password = args[2];
+
   if(!valid_uid(uid)){
     cout << "ERROR: INVALID UID\n";
     return;
   }
 
-  iss >> password;
   if(!valid_password(password)){
     cout << "ERROR: INVALID PASSWORD\n";
-    return;
-  }
-
-  iss >> buffer;
-  if(buffer != ""){ //se tiver argumentos a mais no	comando
-    cout << "ERROR: TOO MANY ARGUMENTS\n";
     return;
   }
 
@@ -91,26 +86,33 @@ void login_process(istringstream &iss, string log_uid, string log_pass){
 int main(int argc, char *argv[]){ //adicionar args e processar
     //ligacacao sockets
     
-    string command,line,uid,pass;
-    int stay = 1;
+    string token,line,uid,pass;
+    vector<string> args;
     istringstream iss;
+    int stay = 1;
 
     while(stay){
 
       //get the command input and process it
       cout << "typecommand: ";
-      getline(cin,line);
-      iss.clear();
-      iss.str(line);
-      string test = iss.str();
-      iss >> command;
-      int code = getCommandType(command);
+      getline(cin,line);        //getting line string from input
+      iss.clear();      
+      iss.str(line);            //turning line into a stream
+
+      args.clear();
+                   //resseting argument vector
+      while(iss >> token){      
+        args.push_back(token);  //reading from line stream and filling argument vector
+      }
+
+      int code = getCommandType(args[0]);   //converting command string to int for switch case
 
       
       switch (code)
       {
       case LOGIN:
-        login_process(iss,uid,pass);
+        if (args.size() != 3) cout << "ERROR: WRONG NUMBER OF ARGUMENTS\n";
+        login_process(args,uid,pass);
         break;
       
       case LOGOUT:
@@ -122,7 +124,8 @@ int main(int argc, char *argv[]){ //adicionar args e processar
         break;
 
       case EXIT:
-        cout << "exit\n";
+        stay = 0;
+        cout << "closing...\n";
         break;
 
       case OPEN_AUCTION:
