@@ -190,8 +190,14 @@ void show_asset_process(vector<string> args){
 
 void bid_process(vector<string> args, string log_uid, string log_pass){
   string aid = args[1];
+  string bid = args[2];
   if (!valid_aid(aid)){
     cout << "ERROR: INVALID AID\n";
+    return;
+  }
+
+  if (!all_of(uid.begin(), uid.end(), ::isdigit)){
+    cout << "ERROR: INVALID BID\n";
     return;
   }
 
@@ -282,23 +288,47 @@ int main(int argc, char *argv[]){ //adicionar args e processar
         break;
       
       case MY_AUCTIONS:
+        if (uid == ""){  
+          cout << "ERROR: NO USER LOGGED IN\n";
+          break;
+        }
         break;
 
       case MY_BIDS:
+        if (uid == ""){  
+          cout << "ERROR: NO USER LOGGED IN\n";
+          break;
+        }
         break;
 
       case LIST:
+        if (uid == ""){  
+          cout << "ERROR: NO USER LOGGED IN\n";
+          break;
+        }
         break;
       
       case SHOW_ASSET:
-      show_asset_process();
+        if (uid == ""){  
+          cout << "ERROR: NO USER LOGGED IN\n";
+          break;
+        }
+        show_asset_process();
         break;
       
       case BID:
-      bid_process();
+        if (uid == ""){  
+            cout << "ERROR: NO USER LOGGED IN\n";
+            break;
+          }
+        bid_process();
         break;
       
       case SHOW_RECORD:
+        if (uid == ""){  
+          cout << "ERROR: NO USER LOGGED IN\n";
+          break;
+        }
         break;
 
       default:
