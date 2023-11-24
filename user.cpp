@@ -186,7 +186,12 @@ void my_auctions_process(string log_uid, string log_pass){
   //print information received
 }
 
-void list(){
+void my_bids_process(string log_uid, string log_pass){
+  //udp conn
+  //print information received
+}
+
+void list_process(){
   //udp conn
   //print information received
 }
@@ -321,6 +326,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
+        my_bids_process(uid,pass);
         break;
 
       case LIST:
@@ -328,6 +334,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
+        list_process();
         break;
       
       case SHOW_ASSET:
@@ -351,6 +358,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
+        show_record(args[1]);
         break;
 
       default:
