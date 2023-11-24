@@ -8,6 +8,7 @@
 #include <iostream>
 #include <filesystem>
 using namespace std;
+using namespace std::filesystem;
 
 #define FALSE 0
 #define TRUE 1
@@ -21,12 +22,12 @@ enum CommandType {
     EXIT,
     OPEN_AUCTION,
     CLOSE_AUCTION,
-    MY_AUCTIONS,
-    MY_BIDS,
-    LIST,
+    MY_AUCTIONS,  
+    MY_BIDS,       
+    LIST,         
     SHOW_ASSET,
     BID,
-    SHOW_RECORD,
+    SHOW_RECORD,  //TODO
     UNKNOWN_COMMAND
 };
 
@@ -138,15 +139,12 @@ void unregister_process(string& log_uid, string& log_pass){
 }
 
 void open_auction_process(vector<string> args, string& log_uid, string& log_pass){
-  //send info to server
-
-  //for now
   if(!valid_auction_name(args[1])){
     cout << "ERROR: INVALID AUCTION NAME\n";
     return;
   }
 
-  ifstream file(args[2]);
+  ifstream file(args[2]);   //testar bem
   if(!file.is_open()){
     cout << "ERROR: INVALID FILE\n";
     return;
@@ -162,7 +160,12 @@ void open_auction_process(vector<string> args, string& log_uid, string& log_pass
     return;
   }
 
-  string file_size = to_string(file_size(args[2]));
+  string fdata;                           //testar bem  
+  uintmax_t size = file_size(args[2]);    //to string quando for para enviar no tcp
+  file.read(&fdata[0], size);
+
+  //sendto etc etc
+  file.close();
 
   cout << "AUCTION OPENED\n";
   
@@ -178,8 +181,17 @@ void close_auction_process(vector<string> args, string& log_uid, string& log_pas
   cout << "CLOSED AUCTION "+aid+"\n";
 }
 
-void show_asset_process(vector<string> args){
-  string aid = args[1];
+void my_auctions_process(string log_uid, string log_pass){
+  //udp conn
+  //print information received
+}
+
+void list(){
+  //udp conn
+  //print information received
+}
+
+void show_asset_process(string aid){
   if (!valid_aid(aid)){
     cout << "ERROR: INVALID AID\n";
     return;
@@ -196,12 +208,21 @@ void bid_process(vector<string> args, string log_uid, string log_pass){
     return;
   }
 
-  if (!all_of(uid.begin(), uid.end(), ::isdigit)){
+  if (!all_of(bid.begin(), bid.end(), ::isdigit)){
     cout << "ERROR: INVALID BID\n";
     return;
   }
 
   //tcp conn
+}
+
+void show_record(string aid){
+  if (!valid_aid(aid)){
+    cout << "ERROR: INVALID AID\n";
+    return;
+  }
+
+  //connections
 }
 
 int main(int argc, char *argv[]){ //adicionar args e processar
@@ -292,6 +313,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
+        my_auctions_process(uid, pass);
         break;
 
       case MY_BIDS:
@@ -313,7 +335,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        show_asset_process();
+        show_asset_process(args[1]);
         break;
       
       case BID:
@@ -321,7 +343,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
             cout << "ERROR: NO USER LOGGED IN\n";
             break;
           }
-        bid_process();
+        bid_process(args, uid, pass);
         break;
       
       case SHOW_RECORD:
