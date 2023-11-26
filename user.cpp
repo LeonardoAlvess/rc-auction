@@ -71,8 +71,9 @@ int getCommandType(const string& command) {
 }
 
 //------------------------------------------------------ AUX ------------------------------------------------------//
+//passar para um ficheiro auxiliar
 
-int valid_N_args(int code, int n_args){
+int valid_N_args(int code, int n_args){                                                                           
   int good_n_ars[13] = {3,1,1,1,5,2,1,1,1,2,3,2,0};
   if (code == 12) return TRUE;
   else return good_n_ars[code]==n_args;
@@ -80,7 +81,7 @@ int valid_N_args(int code, int n_args){
 
 int valid_uid(string uid) {return uid.size() == 6 && all_of(uid.begin(), uid.end(), ::isdigit);}
 
-int valid_aid(string uid) {return uid.size() == 3 && all_of(uid.begin(), uid.end(), ::isdigit);}
+int valid_aid(string aid) {return aid.size() == 3 && all_of(aid.begin(), aid.end(), ::isdigit);}
 
 int valid_password(string pass) { return pass.size() == 8 && all_of(pass.begin(), pass.end(), ::isalnum);}
 
@@ -90,7 +91,7 @@ int valid_start_value(string value) { return value.size() <= 6 && all_of(value.b
 
 int valid_duration(string value) { return value.size() <= 5 && all_of(value.begin(), value.end(), ::isdigit);}
 
-void send_message(int type, string message){
+string send_message(int type, string message){
   int fd,errcode; 
   ssize_t size;
   socklen_t addrlen;
@@ -108,17 +109,16 @@ void send_message(int type, string message){
   if(type==SOCK_DGRAM){
     if(sendto(fd,&message[0],message.size(),0,res->ai_addr,res->ai_addrlen) == -1) exit(1);
     addrlen=sizeof(addr);
-    if((size=recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);
+    if((size=recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);          //adicionar while para textos maior que o buffer
   }
   else{
     if(connect(fd,res->ai_addr,res->ai_addrlen) == -1) exit(1);
     if(write(fd,&message[0],message.size()) == -1) exit(1);
     if(size=read(fd,buffer,128) == -1) exit(1);
   }
-
-  write(1,"echo: ",6); write(1,buffer,size);
   freeaddrinfo(res);
   close(fd);
+  return buffer;
 }
 
 
@@ -129,6 +129,7 @@ void login_process(vector<string> args, string& log_uid, string& log_pass){
 
   string uid = args[1];
   string password = args[2];
+  string received;
 
   if(!valid_uid(uid)){
     cout << "ERROR: INVALID UID\n";
@@ -139,25 +140,33 @@ void login_process(vector<string> args, string& log_uid, string& log_pass){
     cout << "ERROR: INVALID PASSWORD\n";
     return;
   }
-  send_message(SOCK_DGRAM,"LIN " + uid + " " + password + "\n");
+  
+  received = send_message(SOCK_DGRAM,"LIN " + uid + " " + password + "\n");
+
+  if(received == "RLI NOK\n"){            //maybe change
+    cout << "Login Failed\n";
+    return;
+  }
+  else if (received == "RLI OK\n"){
+    cout << "Login Successful\n";
+  }
+  else cout << "User registered\n";
+
   log_uid = uid;                          //for now
   log_pass = password;                    
-  cout << "Login Successful\n";
 }
 
 void logout_process(string& log_uid, string& log_pass){
-  //sendinfo to server
-
-  //for now
+  send_message(SOCK_DGRAM,"LOU " + log_uid + " " + log_pass + "\n");
+  cout << "Logout successful\n";
   log_uid = "";
   log_pass = "";
   return;
 }
 
 void unregister_process(string& log_uid, string& log_pass){
-  //send info to server
-
-  //for now
+  send_message(SOCK_DGRAM,"UNR " + log_uid + " " + log_pass + "\n");
+  cout << "User unregistered\n";
   log_uid = "";
   log_pass = "";
 }
@@ -205,19 +214,55 @@ void close_auction_process(vector<string> args, string& log_uid, string& log_pas
   cout << "CLOSED AUCTION "+aid+"\n";
 }
 
-void my_auctions_process(string log_uid, string log_pass){
-  //udp conn
-  //print information received
+void my_auctions_process(string uid){
+  string received = send_message(SOCK_DGRAM,"LMA " + uid + "\n");
+  if(received == "RMA NOK\n") cout << "The user " + uid + " doesn't have any ongoing auctions\n";
+  else{
+    string aid,state;                     //código mais half-assed de sempre
+    istringstream iss(received);
+    iss >> aid;
+    iss >> aid;
+    while(iss >> aid){
+      iss >> state;
+      if(state == "0") state = "Active";
+      else state = "Closed";
+      cout << aid + ": " + state + "\n";
+    }
+  }
 }
 
-void my_bids_process(string log_uid, string log_pass){
-  //udp conn
-  //print information received
+void my_bids_process(string uid){
+  string received = send_message(SOCK_DGRAM,"LMB " + uid + "\n");
+  if(received == "RMB NOK\n") cout << "The user " + uid + " doesn't have any ongoing bids\n";
+  else{
+    string aid,state;                     //código mais half-assed de sempre
+    istringstream iss(received);
+    iss >> aid;
+    iss >> aid;
+    while(iss >> aid){
+      iss >> state;
+      if(state == "0") state = "Active";
+      else state = "Closed";
+      cout << aid + ": " + state + "\n";
+    }
+  }
 }
 
 void list_process(){
-  //udp conn
-  //print information received
+  string received = send_message(SOCK_DGRAM,"LST\n");
+  if(received == "RMB NOK\n") cout << "No auction was yet started\n";
+  else{
+    string aid,state;                     //código mais half-assed de sempre
+    istringstream iss(received);
+    iss >> aid;
+    iss >> aid;
+    while(iss >> aid){
+      iss >> state;
+      if(state == "0") state = "Active";
+      else state = "Closed";
+      cout << aid + ": " + state + "\n";
+    }
+  }
 }
 
 void show_asset_process(string aid){
@@ -250,7 +295,8 @@ void show_record(string aid){
     cout << "ERROR: INVALID AID\n";
     return;
   }
-
+  
+  send_message(SOCK_DGRAM,"SRC " + aid + "\n");
   //connections
 }
 
@@ -293,7 +339,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
 
       case LOGOUT:
         if (uid == ""){  
-          cout << "ERROR: NO USER LOGGED IN\n";
+          cout << "ERROR: NO USER LOGGED IN\n";       //tirar par fora, usado emt odos os casos menos no final, no exit e no login
           break;
         }
 
@@ -340,7 +386,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        my_auctions_process(uid, pass);
+        my_auctions_process(uid);
         break;
 
       case MY_BIDS:
@@ -348,7 +394,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        my_bids_process(uid,pass);
+        my_bids_process(uid);
         break;
 
       case LIST:
