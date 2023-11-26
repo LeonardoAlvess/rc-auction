@@ -7,6 +7,14 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <cstring>
 using namespace std;
 using namespace std::filesystem;
 
@@ -14,6 +22,7 @@ using namespace std::filesystem;
 #define TRUE 1
 #define SUCCESS 1
 #define FAILURE 0
+#define PORT "58011"              
 
 enum CommandType {
     LOGIN,
@@ -79,22 +88,39 @@ int valid_auction_name(string name) { return name.size() <= 10 && all_of(name.be
 
 int valid_start_value(string value) { return value.size() <= 6 && all_of(value.begin(), value.end(), ::isdigit);}
 
-int process_duration(string& value) { 
-  
-  if( value.size() <= 5 && all_of(value.begin(), value.end(), ::isdigit)){
-    float duration = stof(value);
-    duration = duration/60;
-    value = to_string(duration);
-    return SUCCESS;
-      
-  cout << "ERROR: INVALID DURATION\n";
-  return FAILURE;
+int valid_duration(string value) { return value.size() <= 5 && all_of(value.begin(), value.end(), ::isdigit);}
+
+void send_message(int type, string message){
+  int fd,errcode; 
+  ssize_t size;
+  socklen_t addrlen;
+  struct addrinfo hints,*res;
+  struct sockaddr_in addr;
+  char buffer[128];                               
+  memset(buffer,'\0',sizeof(buffer));             
+  if ((fd=socket(AF_INET,type,0)) == -1) exit(1); //socket
+
+  memset(&hints,0,sizeof hints);
+  hints.ai_family=AF_INET; //IPv4
+  hints.ai_socktype=type; //socket type
+  if(getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res) == -1) exit(1);
+
+  if(type==SOCK_DGRAM){
+    if(sendto(fd,&message[0],message.size(),0,res->ai_addr,res->ai_addrlen) == -1) exit(1);
+    addrlen=sizeof(addr);
+    if((size=recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);
   }
+  else{
+    if(connect(fd,res->ai_addr,res->ai_addrlen) == -1) exit(1);
+    if(write(fd,&message[0],message.size()) == -1) exit(1);
+    if(size=read(fd,buffer,128) == -1) exit(1);
+  }
+
+  write(1,"echo: ",6); write(1,buffer,size);
+  freeaddrinfo(res);
+  close(fd);
 }
 
-void process_file(){
-  
-}
 
 //------------------------------------------------- MAIN FUNCTIONS -------------------------------------------------//
 
@@ -113,9 +139,7 @@ void login_process(vector<string> args, string& log_uid, string& log_pass){
     cout << "ERROR: INVALID PASSWORD\n";
     return;
   }
-
-  //sendto/receivto
-  //se pintar guardar uid e pass
+  send_message(SOCK_DGRAM,"LIN " + uid + " " + password + "\n");
   log_uid = uid;                          //for now
   log_pass = password;                    
   cout << "Login Successful\n";
@@ -155,7 +179,7 @@ void open_auction_process(vector<string> args, string& log_uid, string& log_pass
     return;
   }
   
-  if(!process_duration(args[4])){
+  if(!valid_duration(args[4])){
     cout << "ERROR: INVALID DURATION\n";
     return;
   }
@@ -231,8 +255,6 @@ void show_record(string aid){
 }
 
 int main(int argc, char *argv[]){ //adicionar args e processar
-    //ligacacao sockets
-    
     string token,line,uid,pass;
     vector<string> args;
     istringstream iss;
@@ -367,8 +389,6 @@ int main(int argc, char *argv[]){ //adicionar args e processar
       }
     
     }
-
-    
 }
 
 
