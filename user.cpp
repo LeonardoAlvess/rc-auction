@@ -36,7 +36,7 @@ enum CommandType {
     LIST,         
     SHOW_ASSET,
     BID,
-    SHOW_RECORD,  //TODO
+    SHOW_RECORD,  
     UNKNOWN_COMMAND
 };
 
@@ -152,21 +152,27 @@ void login_process(vector<string> args, string& log_uid, string& log_pass){
   }
   else cout << "User registered\n";
 
-  log_uid = uid;                          //for now
+  log_uid = uid;                          
   log_pass = password;                    
 }
 
 void logout_process(string& log_uid, string& log_pass){
-  send_message(SOCK_DGRAM,"LOU " + log_uid + " " + log_pass + "\n");
-  cout << "Logout successful\n";
+  string received = send_message(SOCK_DGRAM,"LOU " + log_uid + " " + log_pass + "\n");
+  if(received == "RLO NOK\n"){            //maybe change
+    cout << "Logout Failed\n";
+    return;
+  } else cout << "Logout Successful\n";
+  
   log_uid = "";
   log_pass = "";
-  return;
 }
 
 void unregister_process(string& log_uid, string& log_pass){
-  send_message(SOCK_DGRAM,"UNR " + log_uid + " " + log_pass + "\n");
-  cout << "User unregistered\n";
+  string received = send_message(SOCK_DGRAM,"UNR " + log_uid + " " + log_pass + "\n");
+  if(received == "RUR NOK\n"){            //maybe change
+    cout << "Unregistered Failed\n";
+    return;
+  } else cout << "User " + log_uid + "unregistered\n";
   log_uid = "";
   log_pass = "";
 }
@@ -216,7 +222,8 @@ void close_auction_process(vector<string> args, string& log_uid, string& log_pas
 
 void my_auctions_process(string uid){
   string received = send_message(SOCK_DGRAM,"LMA " + uid + "\n");
-  if(received == "RMA NOK\n") cout << "The user " + uid + " doesn't have any ongoing auctions\n";
+  if(received == "RMA NOK\n") 
+    cout << "The user " + uid + " doesn't have any ongoing auctions\n";
   else{
     string aid,state;                     //código mais half-assed de sempre
     istringstream iss(received);
@@ -224,7 +231,7 @@ void my_auctions_process(string uid){
     iss >> aid;
     while(iss >> aid){
       iss >> state;
-      if(state == "0") state = "Active";
+      if(state == "1") state = "Active";
       else state = "Closed";
       cout << aid + ": " + state + "\n";
     }
@@ -241,7 +248,7 @@ void my_bids_process(string uid){
     iss >> aid;
     while(iss >> aid){
       iss >> state;
-      if(state == "0") state = "Active";
+      if(state == "1") state = "Active";
       else state = "Closed";
       cout << aid + ": " + state + "\n";
     }
@@ -258,7 +265,7 @@ void list_process(){
     iss >> aid;
     while(iss >> aid){
       iss >> state;
-      if(state == "0") state = "Active";
+      if(state == "1") state = "Active";
       else state = "Closed";
       cout << aid + ": " + state + "\n";
     }
@@ -296,8 +303,8 @@ void show_record(string aid){
     return;
   }
   
-  send_message(SOCK_DGRAM,"SRC " + aid + "\n");
-  //connections
+  string received = send_message(SOCK_DGRAM,"SRC " + aid + "\n");
+  cout << received << "\n";
 }
 
 int main(int argc, char *argv[]){ //adicionar args e processar
