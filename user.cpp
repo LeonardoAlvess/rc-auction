@@ -15,14 +15,13 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <cstring>
+#include <regex>
 using namespace std;
 using namespace std::filesystem;
 
-#define FALSE 0
-#define TRUE 1
-#define SUCCESS 1
-#define FAILURE 0
-#define PORT "58011"              
+#define PORT "58011"     
+#define TCP_SOCKET SOCK_STREAM
+#define UDP_SOCKET SOCK_DGRAM        
 
 enum CommandType {
     LOGIN,
@@ -73,23 +72,36 @@ int getCommandType(const string& command) {
 //------------------------------------------------------ AUX ------------------------------------------------------//
 //passar para um ficheiro auxiliar
 
-int valid_N_args(int code, int n_args){                                                                           
+bool valid_N_args(int code, int n_args){                                                                           
   int good_n_ars[13] = {3,1,1,1,5,2,1,1,1,2,3,2,0};
-  if (code == 12) return TRUE;
+  if (code == 12) return true;
   else return good_n_ars[code]==n_args;
 }
 
-int valid_uid(string uid) {return uid.size() == 6 && all_of(uid.begin(), uid.end(), ::isdigit);}
+bool valid_uid(string uid) {return uid.size() == 6 && all_of(uid.begin(), uid.end(), ::isdigit);}
 
-int valid_aid(string aid) {return aid.size() == 3 && all_of(aid.begin(), aid.end(), ::isdigit);}
+bool valid_aid(string aid) {return aid.size() == 3 && all_of(aid.begin(), aid.end(), ::isdigit);}
 
-int valid_password(string pass) { return pass.size() == 8 && all_of(pass.begin(), pass.end(), ::isalnum);}
+bool valid_password(string pass) { return pass.size() == 8 && all_of(pass.begin(), pass.end(), ::isalnum);}
 
-int valid_auction_name(string name) { return name.size() <= 10 && all_of(name.begin(), name.end(), ::isalnum);}
+bool valid_auction_name(string name) { return name.size() <= 10 && all_of(name.begin(), name.end(), ::isalnum);}
 
-int valid_start_value(string value) { return value.size() <= 6 && all_of(value.begin(), value.end(), ::isdigit);}
+bool valid_start_value(string value) { return value.size() <= 6 && all_of(value.begin(), value.end(), ::isdigit);}
 
-int valid_duration(string value) { return value.size() <= 5 && all_of(value.begin(), value.end(), ::isdigit);}
+bool valid_duration(string value) { return value.size() <= 5 && all_of(value.begin(), value.end(), ::isdigit);}
+
+bool valid_filename(string filename){
+  if (filename.size() > 10) return false;
+
+  for( char c : filename){
+    if (c != '_' && c != '-' && c != '.' && !isdigit(c) && !isalnum(c)) return false;
+  }
+  return true;
+}
+
+bool valid_filesize(string filesize){ return filesize.size() <= 8;}
+
+bool valid_bid(string bid) { return bid.size() <= 5 && all_of(bid.begin(), bid.end(), ::isdigit);}
 
 string send_message(int type, string message){
   int fd,errcode; 
@@ -97,7 +109,7 @@ string send_message(int type, string message){
   socklen_t addrlen;
   struct addrinfo hints,*res;
   struct sockaddr_in addr;
-  char buffer[128];                               
+  char buffer[6015];                               
   memset(buffer,'\0',sizeof(buffer));             
   if ((fd=socket(AF_INET,type,0)) == -1) exit(1); //socket
 
@@ -106,20 +118,24 @@ string send_message(int type, string message){
   hints.ai_socktype=type; //socket type
   if(getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res) == -1) exit(1);
 
-  if(type==SOCK_DGRAM){
+  if(type==UDP_SOCKET){
     if(sendto(fd,&message[0],message.size(),0,res->ai_addr,res->ai_addrlen) == -1) exit(1);
     addrlen=sizeof(addr);
-    if((size=recvfrom(fd,buffer,128,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);          //adicionar while para textos maior que o buffer
+    if((size=recvfrom(fd,buffer,6015,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);          //adicionar while para textos maior que o buffer
   }
+
   else{
     if(connect(fd,res->ai_addr,res->ai_addrlen) == -1) exit(1);
+    cout << message;
     if(write(fd,&message[0],message.size()) == -1) exit(1);
-    if(size=read(fd,buffer,128) == -1) exit(1);
+    if(size=read(fd,buffer,6015) == -1) exit(1); //adicionar while
+    cout << buffer;
   }
   freeaddrinfo(res);
   close(fd);
   return buffer;
 }
+
 
 
 //------------------------------------------------- MAIN FUNCTIONS -------------------------------------------------//
@@ -141,7 +157,7 @@ void login_process(vector<string> args, string& log_uid, string& log_pass){
     return;
   }
   
-  received = send_message(SOCK_DGRAM,"LIN " + uid + " " + password + "\n");
+  received = send_message(UDP_SOCKET,"LIN " + uid + " " + password + "\n");
 
   if(received == "RLI NOK\n"){            //maybe change
     cout << "Login Failed\n";
@@ -157,7 +173,7 @@ void login_process(vector<string> args, string& log_uid, string& log_pass){
 }
 
 void logout_process(string& log_uid, string& log_pass){
-  string received = send_message(SOCK_DGRAM,"LOU " + log_uid + " " + log_pass + "\n");
+  string received = send_message(UDP_SOCKET,"LOU " + log_uid + " " + log_pass + "\n");
   if(received == "RLO NOK\n"){            //maybe change
     cout << "Logout Failed\n";
     return;
@@ -168,7 +184,7 @@ void logout_process(string& log_uid, string& log_pass){
 }
 
 void unregister_process(string& log_uid, string& log_pass){
-  string received = send_message(SOCK_DGRAM,"UNR " + log_uid + " " + log_pass + "\n");
+  string received = send_message(UDP_SOCKET,"UNR " + log_uid + " " + log_pass + "\n");
   if(received == "RUR NOK\n"){            //maybe change
     cout << "Unregistered Failed\n";
     return;
@@ -177,15 +193,14 @@ void unregister_process(string& log_uid, string& log_pass){
   log_pass = "";
 }
 
-void open_auction_process(vector<string> args, string& log_uid, string& log_pass){
+void open_auction_process(vector<string> args, string& uid, string& pass){
   if(!valid_auction_name(args[1])){
     cout << "ERROR: INVALID AUCTION NAME\n";
     return;
   }
 
-  ifstream file(args[2]);   //testar bem
-  if(!file.is_open()){
-    cout << "ERROR: INVALID FILE\n";
+  if(!valid_filename(args[2])){
+    cout << "ERROR: INVALID FILENAME\n";
     return;
   }
   
@@ -198,34 +213,77 @@ void open_auction_process(vector<string> args, string& log_uid, string& log_pass
     cout << "ERROR: INVALID DURATION\n";
     return;
   }
+  
+  FILE* file = fopen(&args[2][0], "rb");
+  if(!file){
+    cout << "ERROR: INVALID FILE\n";
+    return;
+  }  
 
-  string fdata;                           //testar bem  
   uintmax_t size = file_size(args[2]);    //to string quando for para enviar no tcp
-  file.read(&fdata[0], size);
+  if (!valid_filesize(to_string(size))){
+    cout << "ERROR: FILE TOO BIG\n";
+    fclose(file);
+    return;
+  }
+  
+  char *fdata = (char*) malloc(size * sizeof(char) + 1);
+  fread(fdata, sizeof(char),size, file);
+  fclose(file);
+  fdata[size] = '\0';
 
-  //sendto etc etc
-  file.close();
-
-  cout << "AUCTION OPENED\n";
+  printf("%s", fdata);
+  
+  string aux, received;
+  received = send_message(TCP_SOCKET,"OPA " + uid + " " + pass + " " + args[1] + " "
+     + args[3] + " " + args[4] + " "  + args[2] + " "  + to_string(size) + " " + fdata + " " + "\n");
+  
+  istringstream iss(received);
+  iss >> aux;
+  if (aux != "ROA"){
+    cout << "Unexpected server response\n";
+    return;
+  }
+  iss >> aux;
+  if (aux == "NOK") cout << "Auction couldn't be started\n";
+  else if (aux == "NLG") cout << "No user logged in\n";
+  else if (aux == "OK"){
+    iss >> aux;
+    cout << "Auction " + aux + " was started\n";
+  }
+  free(fdata);
   
 }
 
-void close_auction_process(vector<string> args, string& log_uid, string& log_pass){
+void close_auction_process(vector<string> args, string& uid, string& pass){
   string aid = args[1];
   if (!valid_aid(aid)){
     cout << "ERROR: INVALID AID\n";
     return;
   }
-  //sendto etc etc
+  string aux, received = send_message(TCP_SOCKET,"CLS " + uid + " " + pass + " " + aid + "\n");
+  istringstream iss(received);
+  iss >> aux;
+  if (aux != "RCL"){
+    cout << "Unexpected server response\n";
+    return;
+  }
+  iss >> aux;
+  if (aux == "NOK\n") cout << "There was an error closing the auction\n";
+  else if (aux == "NLG\n") cout << "No user logged in\n";
+  else if (aux == "EAU\n") cout << "The auction " + aid + " doesn't exist\n";
+  else if (aux == "EOW\n") cout << "This auction isnt' owned by " + uid +"\n";
+  else if (aux == "END\n") cout << "This auctios has already finished\n";
+  else if (aux == "OK\n") cout << "The auction " + aid + " was closed\n";
   cout << "CLOSED AUCTION "+aid+"\n";
 }
 
 void my_auctions_process(string uid){
-  string received = send_message(SOCK_DGRAM,"LMA " + uid + "\n");
+  string received = send_message(UDP_SOCKET,"LMA " + uid + "\n");
   if(received == "RMA NOK\n") 
     cout << "The user " + uid + " doesn't have any ongoing auctions\n";
   else{
-    string aid,state;                     //código mais half-assed de sempre
+    string aid,state;                     
     istringstream iss(received);
     iss >> aid;
     iss >> aid;
@@ -239,10 +297,10 @@ void my_auctions_process(string uid){
 }
 
 void my_bids_process(string uid){
-  string received = send_message(SOCK_DGRAM,"LMB " + uid + "\n");
+  string received = send_message(UDP_SOCKET,"LMB " + uid + "\n");
   if(received == "RMB NOK\n") cout << "The user " + uid + " doesn't have any ongoing bids\n";
   else{
-    string aid,state;                     //código mais half-assed de sempre
+    string aid,state;                     
     istringstream iss(received);
     iss >> aid;
     iss >> aid;
@@ -256,10 +314,10 @@ void my_bids_process(string uid){
 }
 
 void list_process(){
-  string received = send_message(SOCK_DGRAM,"LST\n");
+  string received = send_message(UDP_SOCKET,"LST\n");
   if(received == "RMB NOK\n") cout << "No auction was yet started\n";
   else{
-    string aid,state;                     //código mais half-assed de sempre
+    string aid,state;                     
     istringstream iss(received);
     iss >> aid;
     iss >> aid;
@@ -277,11 +335,33 @@ void show_asset_process(string aid){
     cout << "ERROR: INVALID AID\n";
     return;
   }
+  string code, status, file_name, file_size, file_data;
+  string received = send_message(TCP_SOCKET, "SAS "+ aid +"\n");
+  istringstream iss(received);
+  iss >> code;
+  if (code != "RSA"){
+    cout << "ERROR: UNEXPECTED SERVER RESPONSE\n";
+    return;
+  }
+  iss >> status;
+  if(status == "NOK"){
+    cout << "ERROR: NO SUCH FILE TO BE SENT";
+    return;
+  }
+  iss >> file_name >> file_size >> file_data;
+  //store file
 
-  //tcp conn  
+  cout << "test\n";
+  cout << file_name << " " << file_size << " " << file_data << "\n";
+  int size = atoi(&file_size[0]);
+  FILE* fd = fopen(&file_name[0], "w");
+  fwrite(&file_data[0], sizeof(char), size, fd);
+  cout << "File +"+file_name+" was stored with "+file_size+" size\n";
+  fclose(fd);
+  
 }
 
-void bid_process(vector<string> args, string log_uid, string log_pass){
+void bid_process(vector<string> args, string uid, string pass){
   string aid = args[1];
   string bid = args[2];
   if (!valid_aid(aid)){
@@ -289,12 +369,25 @@ void bid_process(vector<string> args, string log_uid, string log_pass){
     return;
   }
 
-  if (!all_of(bid.begin(), bid.end(), ::isdigit)){
+  if (!valid_bid(bid)){
     cout << "ERROR: INVALID BID\n";
     return;
   }
-
-  //tcp conn
+  
+  string aux,received = send_message(TCP_SOCKET,"BID " + uid + " " + pass + " " + aid + " " + bid +"\n");
+  istringstream iss(received);
+  iss >> aux;
+  if (aux != "RBD"){
+    cout << "Unexpected server response\n";
+    return;
+  }
+  iss >> aux;
+  if (aux == "NOK") cout << "Auction not active\n";
+  else if (aux == "NLG") cout << "No user logged in\n";
+  else if (aux == "ACC") cout << "The bid was accepted\n";
+  else if (aux == "REF") cout << "A larger bid was placed previously\n";
+  else if (aux == "ILG") cout << "Can't bid on your own auction\n";
+  
 }
 
 void show_record(string aid){
@@ -302,9 +395,48 @@ void show_record(string aid){
     cout << "ERROR: INVALID AID\n";
     return;
   }
+  string host_UID, auction_name, asset_fname, start_value, start_date, start_time, timeactive;
+  string bidder_UID, bid_value, bid_date, bid_time, bid_sec_time;
+  string end_date, end_time, end_sec_time;
+  string aux,received = send_message(UDP_SOCKET,"SRC " + aid + "\n");
+  istringstream iss(received);
+
+  if(received == "RRC NOK\n")
+    cout << "There was an error displaying the record\n";
+
+  else {
+    cout << received;
+    iss >> aux >> aux;      //saltar code and status
+    iss >> host_UID >> auction_name >> asset_fname >> start_value >> start_date >> start_time >> timeactive;
+
+    cout << "Auction "+auction_name+" hosted by user "+host_UID+"\n"
+           "File name: "+asset_fname+"\n"
+           "Starting value: "+start_value+"\n"
+           "Starting time "+start_date+" "+start_time+"\n"
+           "Auction duration: "+timeactive+"\n";
+    cout << "---------------------------------------------------\n"
+            "                   BID HISTORY                     \n"
+            "---------------------------------------------------\n";
+
+    while(iss >> aux){
+      if (aux == "B"){
+        iss >> bidder_UID >> bid_value >> bid_date >> bid_time >> bid_sec_time;
+
+        cout << bid_date+" "+bid_time+" : User "+bidder_UID+" bid "+bid_value+" credits \n"+
+                "                      Time since start: "+bid_sec_time+" seconds\n"
+                "---------------------------------------------------\n";
+      }
+      else if (aux == "E"){
+        
+        iss >> end_date >> end_time >> end_sec_time;
+        cout << "Auction ended at "+end_date+" "+end_time+"\n"
+                +end_sec_time+"seconds since start\n";
+      }
+      else break;
+    }    
+  }
   
-  string received = send_message(SOCK_DGRAM,"SRC " + aid + "\n");
-  cout << received << "\n";
+  
 }
 
 int main(int argc, char *argv[]){ //adicionar args e processar
@@ -377,7 +509,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        
+        open_auction_process(args, uid, pass);
         break;
       
       case CLOSE_AUCTION:
