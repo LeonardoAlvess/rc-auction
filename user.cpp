@@ -1,9 +1,10 @@
 #include <iostream>
-#include "utils.h"
 #include "processes.h"
+#include <filesystem>
+  
 using namespace std;
 using namespace std::filesystem;
-      
+
 int main(int argc, char *argv[]){ //adicionar args e processar
     string token,line,uid,pass;
     vector<string> args;
