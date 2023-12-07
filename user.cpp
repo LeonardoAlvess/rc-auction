@@ -1,15 +1,29 @@
 #include <iostream>
+#include <sstream>
 #include "processes.h"
-#include <filesystem>
-  
-using namespace std;
-using namespace std::filesystem;
 
-int main(int argc, char *argv[]){ //adicionar args e processar
-    string token,line,uid,pass;
+using namespace std;
+
+int main(int argc, char *argv[]){
+    string token,line,uid,pass,ip,port = PORT;
     vector<string> args;
     istringstream iss;
     int stay = 1;
+    
+    port = PORT;
+    ip = IP;
+
+    for(int i = 1; i < argc; i++){
+      if (argv[i] == "-n"){
+        i++;
+        ip = argv[i];
+      }
+      else if (argv[i] == "-p"){
+        i++;
+        port = argv[i];
+      }
+    }
+
 
     while(stay){
 
@@ -39,7 +53,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           break;
         }
 
-        login_process(args,uid,pass);
+        login_process(port,ip,args,uid,pass);
         break;
 
       case LOGOUT:
@@ -48,7 +62,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           break;
         }
 
-        logout_process(uid,pass);
+        logout_process(port,ip,uid,pass);
         break;
 
       case UNREGISTER:
@@ -57,7 +71,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           break;
         }
 
-        unregister_process(uid, pass);
+        unregister_process(port,ip,uid, pass);
 
         break;
 
@@ -75,7 +89,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        open_auction_process(args, uid, pass);
+        open_auction_process(port,ip,args, uid, pass);
         break;
       
       case CLOSE_AUCTION:
@@ -83,7 +97,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        close_auction_process(args, uid, pass);
+        close_auction_process(port,ip,args, uid, pass);
         break;
       
       case MY_AUCTIONS:
@@ -91,7 +105,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        my_auctions_process(uid);
+        my_auctions_process(port,ip,uid);
         break;
 
       case MY_BIDS:
@@ -99,7 +113,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        my_bids_process(uid);
+        my_bids_process(port,ip,uid);
         break;
 
       case LIST:
@@ -107,7 +121,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        list_process();
+        list_process(port,ip);
         break;
       
       case SHOW_ASSET:
@@ -115,7 +129,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        show_asset_process(args[1]);
+        show_asset_process(port,ip,args[1]);
         break;
       
       case BID:
@@ -123,7 +137,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
             cout << "ERROR: NO USER LOGGED IN\n";
             break;
           }
-        bid_process(args, uid, pass);
+        bid_process(port,ip,args, uid, pass);
         break;
       
       case SHOW_RECORD:
@@ -131,7 +145,7 @@ int main(int argc, char *argv[]){ //adicionar args e processar
           cout << "ERROR: NO USER LOGGED IN\n";
           break;
         }
-        show_record_process(args[1]);
+        show_record_process(port,ip,args[1]);
         break;
 
       default:

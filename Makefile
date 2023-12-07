@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -std=c++11 -Wall
+CFLAGS = -std=c++17 -Wall
 
 SRC = user.cpp processes.cpp utils.cpp
 OBJ = $(SRC:%.cpp=%.o)

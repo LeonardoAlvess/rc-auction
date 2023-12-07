@@ -1,10 +1,8 @@
 #include <string>
 using namespace std;
 
-
 #define PORT "58011"     
-#define TCP_SOCKET SOCK_STREAM
-#define UDP_SOCKET SOCK_DGRAM        
+#define IP "tejo.tecnico.ulisboa.pt"
 
 enum CommandType {
     LOGIN,
@@ -45,4 +43,14 @@ bool valid_filesize(string filesize);
 
 bool valid_bid(string bid);
 
-string send_message(int type, string message);
+string send_message_udp(string port,string ip, string message);
+
+string send_single_message_tcp( string port, string ip, string message, int size);
+
+struct addrinfo* connect_tcp(int* fd, string port,string ip);
+
+void send_message_tcp(int fd, string message, int size);
+
+string receive_message_tcp(int fd);
+
+void end_tcp(int fd,struct addrinfo *res);

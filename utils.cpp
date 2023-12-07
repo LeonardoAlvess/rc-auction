@@ -76,35 +76,62 @@ bool valid_filesize(string filesize){ return filesize.size() <= 8;}
 
 bool valid_bid(string bid) { return bid.size() <= 5 && all_of(bid.begin(), bid.end(), ::isdigit);}
 
-string send_message(int type, string message){
-  int fd,errcode; 
+string send_message_udp(string port, string ip,string message){
+  int fd; 
   ssize_t size;
   socklen_t addrlen;
   struct addrinfo hints,*res;
   struct sockaddr_in addr;
   char buffer[6015];                               
   memset(buffer,'\0',sizeof(buffer));             
-  if ((fd=socket(AF_INET,type,0)) == -1) exit(1); //socket
-
+  if ((fd=socket(AF_INET,SOCK_DGRAM,0)) == -1) exit(1); //socket
   memset(&hints,0,sizeof hints);
   hints.ai_family=AF_INET; //IPv4
-  hints.ai_socktype=type; //socket type
-  if(getaddrinfo("tejo.tecnico.ulisboa.pt",PORT,&hints,&res) == -1) exit(1);
+  hints.ai_socktype=SOCK_DGRAM; //udp socket
+  if(getaddrinfo(&ip[0],&port[0],&hints,&res) == -1) exit(1);
+  if(sendto(fd,&message[0],message.size(),0,res->ai_addr,res->ai_addrlen) == -1) exit(1);
+  addrlen=sizeof(addr);
+  if((size=recvfrom(fd,buffer,6015,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);     
 
-  if(type==UDP_SOCKET){
-    if(sendto(fd,&message[0],message.size(),0,res->ai_addr,res->ai_addrlen) == -1) exit(1);
-    addrlen=sizeof(addr);
-    if((size=recvfrom(fd,buffer,6015,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);          //adicionar while para textos maior que o buffer
-  }
-
-  else{
-    if(connect(fd,res->ai_addr,res->ai_addrlen) == -1) exit(1);
-    cout << message;
-    if(write(fd,&message[0],message.size()) == -1) exit(1);
-    if(size=read(fd,buffer,6015) == -1) exit(1); //adicionar while
-    cout << buffer;
-  }
   freeaddrinfo(res);
   close(fd);
   return buffer;
+}
+
+string send_single_message_tcp(string port, string ip, string message, int size){
+    int fd;
+    struct addrinfo *res;
+    res = connect_tcp(&fd,port,ip);
+    send_message_tcp(fd,message,size);
+    message = receive_message_tcp(fd);
+    end_tcp(fd,res);
+    return message;
+}
+
+struct addrinfo* connect_tcp(int* fd, string port,string ip){
+    struct addrinfo hints,*res;                           
+               
+    if ((*fd=socket(AF_INET,SOCK_STREAM,0)) == -1) exit(1); //socket
+    memset(&hints,0,sizeof hints);
+    hints.ai_family=AF_INET; //IPv4
+    hints.ai_socktype=SOCK_STREAM; //udp socket
+    if(getaddrinfo(&ip[0],&port[0],&hints,&res) == -1) exit(1);
+    if(connect(*fd,res->ai_addr,res->ai_addrlen) == -1) exit(1);
+    return res;
+}
+
+void send_message_tcp(int fd, string message, int size){
+    if(write(fd,&message[0], size) == -1) exit(1);
+}
+
+string receive_message_tcp(int fd){
+    char buffer[2000]; 
+    memset(buffer,'\0',sizeof(buffer));  
+    if(read(fd,buffer,2000) == -1) exit(1);
+    return buffer;
+}
+
+void end_tcp(int fd,struct addrinfo *res){
+    freeaddrinfo(res);
+    close(fd);
 }
