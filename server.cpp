@@ -7,6 +7,8 @@
 
 using namespace std;
 
+//--------------------ACTION-----------------------------
+
 int createUser(string uid, string pass){
     int ret;
     string uid_dirname = "USERS/"+uid;
@@ -96,10 +98,22 @@ int eraseUser(string uid){
     return 1;       
 }
 
+int makeBid(string aid, string uid, string bid, string bid_info){
+    string filename = "AUCTIONS/"+aid+"/BIDS/"+bid+".txt";
+    FILE *fp = fopen(&filename[0], "w");    
+    if (fp==NULL) return 0;
+    fwrite(&bid_info[0],sizeof(char),bid_info.length(),fp);
+    fclose(fp);
+    return 1;
+}
+
+//-----------------------VERIFY------------------------------------------
+
+
 string validateBid(string aid, string uid, string bid){
     if(!valid_aid(aid) || !valid_uid(uid)|| !valid_bid(bid)) return "ERR";
 
-    string end_name = "AUCTIONS/"+aid+"/END_"+aid".txt";
+    string end_name = "AUCTIONS/"+aid+"/END_"+aid+".txt";
     FILE *fp = fopen(&end_name[0],"r");
     if (fp == NULL) return "NOK";
 
@@ -110,7 +124,6 @@ string validateBid(string aid, string uid, string bid){
     string bids_dirname = "AUCTIONS/"+aid+"/BIDS/";
     struct dirent **filelist;
     int n_entries = scandir(&bids_dirname[0],&filelist, 0,alphasort);
-    string bid_filename;
     while (n_entries--){
         string bid_value;
         sscanf(filelist[n_entries]->d_name,"%s.txt",&bid_value[0]);
@@ -119,23 +132,140 @@ string validateBid(string aid, string uid, string bid){
 
     string start_name = "AUCTIONS/"+aid+"/START_"+aid+".txt";
     ifstream ifs(&start_name[0], ofstream::in);
-    string auction_uid << ifs;
+    string auction_uid;
+
+    ifs >> auction_uid;
     if (auction_uid == uid) return "ILG";
-    
+
     return "ACC";
 }
 
-int makeBid(string aid, string uid, string bid, string bid_info){
-    string filename = "AUCTIONS/"+aid+"/BIDS/"+bid+".txt";
-    FILE *fp = fopen(&filename[0], "w");    
+
+int is_registered(string uid){
+    string filename = "USERS/"+uid+"/"+uid+"_pass.txt";
+    FILE* fp = fopen(&filename[0],"r");
     if (fp==NULL) return 0;
-    fwrite(&bid_info[0],sizeof(char),bid_info.length(),fp);
-    fclose(fp);
+    else return 1;
+}
+
+int is_logged(string uid){
+    string filename = "USERS/"+uid+"/"+uid+"_login.txt";
+    FILE* fp = fopen(&filename[0],"r");
+    if (fp==NULL) return 0;
+    else return 1;
+}
+
+int is_owner(string uid, string aid){
+    string host_dirname = "USERS/"+uid+"/HOSTED/";
+    struct dirent **filelist;
+    int n_entries = scandir(&host_dirname[0],&filelist, 0,alphasort);
+    while (n_entries--){
+        string host_aid;
+        sscanf(filelist[n_entries]->d_name,"%s.txt",&host_aid[0]);
+        if (host_aid == aid) return 1;
+    }
+    return 0;
+}
+
+int exists(string aid){
+    struct dirent **filelist;
+    int n_entries = scandir("AUCTIONS/",&filelist, 0,alphasort);
+    while (n_entries--){
+        string real_aid;
+        sscanf(filelist[n_entries]->d_name,"%s",&real_aid[0]);
+        if (real_aid == aid) return 1;
+    }
+    return 0;
+}
+
+int ended(string aid){
+    string filename = "AUCTION/"+aid+"/END_"+aid+".txt";
+    FILE* fp = fopen(&filename[0],"r");
+    if (fp==NULL) return 0;
+    else return 1;
+}
+
+
+//------------------------PROCESS-----------------------------------------
+
+
+int login_process(string uid, string pass, string port, string ip){
+    string msg, saved_pass;
+    if (is_registered(uid)){
+        string pass_name = "USERS/"+uid+"/"+uid+"/_pass.txt";
+        ifstream ifs(&pass_name[0],ifstream::in);
+        ifs >> saved_pass;
+        if (saved_pass != pass) msg = "RLI NOK";
+        else {
+            msg = "RLI OK";
+            createLogin(uid);
+        }
+    }
+    else{
+        msg = "RLI REG";
+        createUser(uid, pass);
+    }
+    send_message_udp(port,ip,msg);
     return 1;
+}
+
+int logout_process(string uid, string pass, string port, string ip){
+    string msg;
+    if(!is_registered(uid)) msg = "RLO UNR";
+    else if(!is_logged(uid)) msg = "RLO NOK";
+    else {
+        msg = "RLO OK";
+        eraseLogin(uid);
+    }
+
+    send_message_udp(port, ip, msg);
+    return 1;
+}
+
+int unregister_process(string uid, string pass, string port, string ip){
+    string msg;
+    if(!is_registered(uid)) msg = "RUR UNR";
+    else if(!is_logged(uid)) msg = "RUR NOK";
+    else {
+        msg = "RUR OK";
+        eraseUser(uid);
+    }
+
+    send_message_udp(port, ip, msg);
+    return 1;
+}
+
+int close_process(string uid, string pass, string aid, string port, string ip){
+    string msg, end_info;
+    if (!is_logged(uid)) msg = "RCL NLG";
+    else if (!exists(aid)) msg = "RCL EAU";
+    else if (!is_owner(uid,aid)) msg = "RCL EOW";    
+    else if (!ended(aid)) msg = "RCL END";
+    else {
+        msg = "RCL OK";
+        //get endinfo (time etc)
+        endAuction(aid, end_info);
+    }
+
+
+}
+
+int bid_process(string uid, string pass, string aid, string bid, string port, string ip){
+    string bid_datetime, bid_sec_time, bid_info, status, msg;
+    string msg = "RBD " + validateBid(aid, uid, bid);
+    send_single_message_tcp(port,ip,msg);
+    if (status != "ACC") return 1;
+
+    // get date and time
+    bid_info = uid+" "+bid+" "+bid_datetime+" "+bid_sec_time; //complete pls
+    makeBid(aid, uid, bid, bid_info);
+    return 1;
+
 }
 
 
 
+//----------------------------MAIN----------------------------------
 
 
 int main(int argc, char *argv[]){ //adicionar args e processar

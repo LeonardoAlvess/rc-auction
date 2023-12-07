@@ -98,11 +98,11 @@ string send_message_udp(string port, string ip,string message){
   return buffer;
 }
 
-string send_single_message_tcp(string port, string ip, string message, int size){
+string send_single_message_tcp(string port, string ip, string message){
     int fd;
     struct addrinfo *res;
     res = connect_tcp(&fd,port,ip);
-    send_message_tcp(fd,message,size);
+    send_message_tcp(fd,message);
     message = receive_message_tcp(fd);
     end_tcp(fd,res);
     return message;
@@ -120,6 +120,10 @@ struct addrinfo* connect_tcp(int* fd, string port,string ip){
     return res;
 }
 
+void send_message_tcp(int fd, string message){
+    if(write(fd,&message[0], message.size()) == -1) exit(1);
+}
+
 void send_message_tcp(int fd, string message, int size){
     if(write(fd,&message[0], size) == -1) exit(1);
 }
@@ -128,6 +132,13 @@ string receive_message_tcp(int fd){
     char buffer[2000]; 
     memset(buffer,'\0',sizeof(buffer));  
     if(read(fd,buffer,2000) == -1) exit(1);
+    return buffer;
+}
+
+string receive_message_tcp(int fd, int *size){
+    char buffer[2000]; 
+    memset(buffer,'\0',sizeof(buffer));  
+    if((*size = read(fd,buffer,2000)) == -1) exit(1);
     return buffer;
 }
 

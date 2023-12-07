@@ -101,7 +101,7 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
     return;
   }
   
-  char buffer[2000];
+  char buffer[20000];
   string received,aux;
   int fd,fsize;
   struct addrinfo *res;
@@ -109,7 +109,7 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
   aux ="OPA " + uid + " " + pass + " " + args[1] + " "
      + args[3] + " " + args[4] + " "  + args[2] + " "  + to_string(size) + " ";
   send_message_tcp(fd,aux,aux.size());
-  while((fsize = read(file,buffer,2000)) != 0){
+  while((fsize = read(file,buffer,20000)) != 0){
     send_message_tcp(fd,buffer,fsize);
   
   }
@@ -141,8 +141,8 @@ void close_auction_process(string port, string ip, vector<string> args, string& 
     cout << "ERROR: INVALID AID\n";
     return;
   }
-  string received, aux = "CLS " + uid + " " + pass + " " + aid + "\n";
-  received = send_single_message_tcp(port, ip, aux, aux.size());
+  string received, aux;
+  received = send_single_message_tcp(port, ip, "CLS " + uid + " " + pass + " " + aid + "\n");
   istringstream iss(received);
   iss >> aux;
   if (aux != "RCL"){
@@ -217,8 +217,13 @@ void show_asset_process(string port, string ip, string aid){
     return;
   }
   string code, status, file_name, file_size, file_data;
-  string received , aux= "SAS "+ aid +"\n";
-  received = send_single_message_tcp(port, ip, aux, aux.size());
+
+  string received , aux= "SAS "+ aid +"\n";  
+  int fd,size;
+  struct addrinfo *res;
+  res = connect_tcp(&fd,port,ip);
+  send_message_tcp(fd,aux,aux.size());
+  received = receive_message_tcp(fd,&size);
   istringstream iss(received);
   iss >> code;
   if (code != "RSA"){
@@ -230,16 +235,18 @@ void show_asset_process(string port, string ip, string aid){
     cout << "ERROR: NO SUCH FILE TO BE SENT";
     return;
   }
-  iss >> file_name >> file_size >> file_data;
-  //store file
+  iss >> file_name >> file_size;
+  int i = code.size() + status.size() + file_name.size() + file_size.size() + 4; // 4 = blank spaces
 
-  cout << "test\n";
-  cout << file_name << " " << file_size << " " << file_data << "\n";
-  int size = atoi(&file_size[0]);
-  FILE* fd = fopen(&file_name[0], "w");
-  fwrite(&file_data[0], sizeof(char), size, fd);
-  cout << "File +"+file_name+" was stored with "+file_size+" size\n";
-  fclose(fd);
+  int file = open(&file_name[0], O_WRONLY | O_CREAT, 0644);
+  cout << received;
+  write(file,&received[i],size-i);
+  while((received = receive_message_tcp(fd,&size)) != ""){
+    write(file,&received[0],size);
+    cout<< size << "\n";
+  }
+  end_tcp(fd,res);   
+  close(file);
   
 }
 
@@ -256,8 +263,8 @@ void bid_process(string port, string ip, vector<string> args, string uid, string
     return;
   }
   
-  string received, aux = "BID " + uid + " " + pass + " " + aid + " " + bid +"\n";
-  received = send_single_message_tcp(port, ip, aux, aux.size());
+  string received, aux;
+  received = send_single_message_tcp(port, ip, "BID " + uid + " " + pass + " " + aid + " " + bid +"\n");
   istringstream iss(received);
   iss >> aux;
   if (aux != "RBD"){
