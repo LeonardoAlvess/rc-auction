@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -107,6 +108,57 @@ int makeBid(string aid, string uid, string bid, string bid_info){
     return 1;
 }
 
+vector<string> get_hosted(string uid){
+    vector<string> aid_list;
+    string host_dirname = "USERS/"+uid+"/HOSTED/";
+    struct dirent **filelist;
+    int n_entries = scandir(&host_dirname[0],&filelist, 0,alphasort);
+    while (n_entries--){
+        string aid;
+        sscanf(filelist[n_entries]->d_name,"%s.txt",&aid[0]);
+        aid_list.push_back(aid);
+    }
+    return aid_list;
+}
+
+vector<string> get_bidded(string uid){
+    vector<string> aid_list;
+    string host_dirname = "USERS/"+uid+"/BIDDED/";
+    struct dirent **filelist;
+    int n_entries = scandir(&host_dirname[0],&filelist, 0,alphasort);
+    while (n_entries--){
+        string aid;
+        sscanf(filelist[n_entries]->d_name,"%s.txt",&aid[0]);
+        aid_list.push_back(aid);
+    }
+    return aid_list;
+}
+
+vector<string> get_all_auctions(){
+    vector<string> aid_list;
+    struct dirent **filelist;
+    int n_entries = scandir("/AUCTIONS",&filelist, 0,alphasort);
+    while (n_entries--){
+        string aid = filelist[n_entries]->d_name;
+        aid_list.push_back(aid);
+    }
+    return aid_list;
+}
+
+vector<string> get_auction_bids(string aid){
+    vector<string> bids_list;
+    string bids_dirname = "AUCTIONS/"+aid+"/BIDS/";
+    struct dirent **filelist;
+    int n_entries = scandir(&bids_dirname[0],&filelist, 0,alphasort);
+    while (n_entries--){
+        string bid = filelist[n_entries]->d_name;
+        bids_list.push_back(bid);
+    }
+    return bids_list;
+}
+
+
+
 //-----------------------VERIFY------------------------------------------
 
 
@@ -189,7 +241,7 @@ int ended(string aid){
 //------------------------PROCESS-----------------------------------------
 
 
-int login_process(string uid, string pass, string port, string ip){
+int sv_login_process(string uid, string pass, string port, string ip){
     string msg, saved_pass;
     if (is_registered(uid)){
         string pass_name = "USERS/"+uid+"/"+uid+"/_pass.txt";
@@ -209,7 +261,7 @@ int login_process(string uid, string pass, string port, string ip){
     return 1;
 }
 
-int logout_process(string uid, string pass, string port, string ip){
+int sv_logout_process(string uid, string pass, string port, string ip){
     string msg;
     if(!is_registered(uid)) msg = "RLO UNR";
     else if(!is_logged(uid)) msg = "RLO NOK";
@@ -222,7 +274,7 @@ int logout_process(string uid, string pass, string port, string ip){
     return 1;
 }
 
-int unregister_process(string uid, string pass, string port, string ip){
+int sv_unregister_process(string uid, string pass, string port, string ip){
     string msg;
     if(!is_registered(uid)) msg = "RUR UNR";
     else if(!is_logged(uid)) msg = "RUR NOK";
@@ -235,7 +287,95 @@ int unregister_process(string uid, string pass, string port, string ip){
     return 1;
 }
 
-int close_process(string uid, string pass, string aid, string port, string ip){
+int sv_myauctions_process(string uid, string port, string ip){
+    string msg = "RMA", state;
+    vector<string> aid_list, empty;
+    if (!is_logged(uid)) msg+= " NLG";
+    else if ((aid_list = get_hosted(uid)) == empty) msg += " NOK";
+    else{
+        for(vector<string>::iterator it=aid_list.begin(); it != aid_list.end(); ++it){
+            if(!ended(*it)) state = "1";
+            else state = "0";
+            msg += " "+ *it + " " + state;
+        }
+    }
+    send_message_udp(port, ip, msg);
+    return 1;
+}
+
+int sv_mybids_process(string uid, string port, string ip){
+    string msg = "RMB", state;
+    vector<string> aid_list, empty, used;
+    bool dupe;
+    if (!is_logged(uid)) msg += " NLG";
+    else if((aid_list = get_bidded(uid)) == empty) msg += " NOK";
+    else{
+        for(vector<string>::iterator it=aid_list.begin(); it != aid_list.end(); ++it){
+            dupe = false;
+            for (vector<string>::iterator us=used.begin(); us != used.end(); ++us){
+                if (*it == *us) {
+                    dupe = true;
+                    break;
+                }
+            }
+            if (dupe) continue;
+            if(!ended(*it)) state = "1";
+            else state = "0";
+            msg += " "+ *it + " " + state;
+        }
+    }
+    send_message_udp(port, ip, msg);
+    return 1;
+}
+
+int sv_list_process(string port, string ip){
+    string msg = "RLS", state;
+    vector<string> empty, aid_list = get_all_auctions();
+    if (aid_list == empty) msg += " NOK";
+    else {
+        msg += " OK";
+        for(vector<string>::iterator it=aid_list.begin(); it != aid_list.end(); ++it){
+            if(!ended(*it)) state = "1";
+            else state = "0";
+            msg += " "+ *it + " " + state;
+        }
+    }
+    send_message_udp(port,ip,msg);
+    return 1;
+    }
+
+int sv_show_record_process(string aid, string port, string ip){
+    string msg = "RRC", host_UID, name, asset_fname, start_value, start_datetime, timeactive;
+    vector<string> bids_list;
+    if (!exists(aid)) msg += " NOK";
+    else{
+        string filename = "AUCTIONS/"+aid+"/START_"+aid+".txt";
+        ifstream ifs(filename, ifstream::in);
+        ifs >> host_UID >> name >> asset_fname >> start_value >> timeactive >> start_datetime;
+        msg += " " + host_UID + " " + name + " " + asset_fname + " " + start_value + " " + start_datetime + " " + timeactive;
+       
+        bids_list = get_auction_bids(aid);
+
+        for(vector<string>::iterator it = bids_list.begin(); it != bids_list.end(); ++it){
+            filename = "AUCTIONS/"+aid+"/BIDS/"+*it+".txt";
+            string bid_info;
+            getline(ifs,bid_info);
+            msg += " B " + bid_info;
+        }
+
+        if(ended(aid)){
+            filename = "AUCTIONS/"+aid+"/END_"+aid+".txt";
+            string end_info;
+            getline(ifs,end_info);
+            msg += " E " + end_info;
+        }
+    }
+
+    send_message_udp(port, ip, msg);
+    return 1;
+}
+
+int sv_close_process(string uid, string pass, string aid, string port, string ip){
     string msg, end_info;
     if (!is_logged(uid)) msg = "RCL NLG";
     else if (!exists(aid)) msg = "RCL EAU";
@@ -246,12 +386,12 @@ int close_process(string uid, string pass, string aid, string port, string ip){
         //get endinfo (time etc)
         endAuction(aid, end_info);
     }
-
-
+    send_single_message_tcp(port, ip, msg);
+    return 1;
 }
 
-int bid_process(string uid, string pass, string aid, string bid, string port, string ip){
-    string bid_datetime, bid_sec_time, bid_info, status, msg;
+int sv_bid_process(string uid, string pass, string aid, string bid, string port, string ip){
+    string bid_datetime, bid_sec_time, bid_info, status;
     string msg = "RBD " + validateBid(aid, uid, bid);
     send_single_message_tcp(port,ip,msg);
     if (status != "ACC") return 1;

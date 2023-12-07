@@ -1,22 +1,27 @@
 CC = g++
 CFLAGS = -std=c++17 -Wall
 
-SRC = user.cpp processes.cpp utils.cpp
+SRC = user.cpp processes.cpp utils.cpp server.cpp
 OBJ = $(SRC:%.cpp=%.o)
 
-EXECUTABLE = user
+EXECUTABLES = user AS
 
-$(EXECUTABLE): $(OBJ)
+user: user.o processes.o utils.o
+	$(CC) $(CFLAGS) $^ -o $@
+
+AS: server.o utils.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
+
 user.o: processes.h
 processes.o: processes.h utils.h
+server.o: utils.h
 
 .PHONY: clean
 
 clean:
-	rm -f $(OBJ) $(EXECUTABLE)
+	rm -f $(OBJ) $(EXECUTABLES)
 	

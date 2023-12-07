@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include "processes.h"
+#include <cstring>
 
 using namespace std;
 
@@ -14,11 +15,11 @@ int main(int argc, char *argv[]){
     ip = IP;
 
     for(int i = 1; i < argc; i++){
-      if (argv[i] == "-n"){
+      if (!strcmp(argv[i],"-n")){
         i++;
         ip = argv[i];
       }
-      else if (argv[i] == "-p"){
+      else if (!strcmp(argv[i],"-p")){
         i++;
         port = argv[i];
       }
