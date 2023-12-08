@@ -1,10 +1,12 @@
 CC = g++
-CFLAGS = -std=c++17 -Wall
+CFLAGS = -std=c++17 -Wall -g
 
 SRC = user.cpp processes.cpp utils.cpp server.cpp
 OBJ = $(SRC:%.cpp=%.o)
 
 EXECUTABLES = user AS
+
+all: $(EXECUTABLES)
 
 user: user.o processes.o utils.o
 	$(CC) $(CFLAGS) $^ -o $@
@@ -15,7 +17,6 @@ AS: server.o utils.o
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
-
 user.o: processes.h
 processes.o: processes.h utils.h
 server.o: utils.h
@@ -24,4 +25,3 @@ server.o: utils.h
 
 clean:
 	rm -f $(OBJ) $(EXECUTABLES)
-	

@@ -4,7 +4,9 @@
 #include <dirent.h>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <vector>
+#include <cstring>
 
 using namespace std;
 
@@ -13,82 +15,91 @@ using namespace std;
 int createUser(string uid, string pass){
     int ret;
     string uid_dirname = "USERS/"+uid;
-    ret = mkdir(&uid_dirname[0],0700);
-    if (ret==-1) return 0;
+    struct stat buf;
 
-    string host_dirname = uid_dirname+"/HOSTED";
-    string bid_dirname = uid_dirname+"/BIDDED";
+    if (stat(&uid_dirname[0], &buf) != 0){         //if directory USERS/aid not found 
+        ret = mkdir(&uid_dirname[0],0700);          
+        if (ret==-1) return -1;
 
-    ret = mkdir(&host_dirname[0],0700);
-    if (ret==-1){
-        rmdir(&uid_dirname[0]);
-        return 0;
+        string host_dirname = uid_dirname+"/HOSTED";
+        string bid_dirname = uid_dirname+"/BIDDED";
+
+        ret = mkdir(&host_dirname[0],0700);
+        if (ret==-1){
+            rmdir(&uid_dirname[0]);
+            return -1;
+        }
+
+        ret = mkdir(&bid_dirname[0],0700);
+        if (ret==-1){
+            rmdir(&uid_dirname[0]);
+            rmdir(&host_dirname[0]);
+            return -1;
+        }
     }
-
-    ret = mkdir(&bid_dirname[0],0700);
-    if (ret==-1){
-        rmdir(&uid_dirname[0]);
-        rmdir(&host_dirname[0]);
-        return 0;
-    }
+    
 
     string filename = "USERS/"+uid+"/"+uid+"_pass.txt";
 
     FILE *fp = fopen(&filename[0], "w");    
-    if (fp==NULL) return 0;
+    if (fp==NULL) return -1;
     fwrite(&pass[0],sizeof(char),pass.length(),fp);
     fclose(fp);
-    return 1;
+    return 0;
 }
 
-int createAuction(string aid, string start){
+int createAuction(string aid, string start_info){
     int ret;
-    if (!valid_aid(aid)) return 0;
     string aid_dirname = "AUCTIONS/"+aid;
     ret = mkdir(&aid_dirname[0], 0700);
-    if (ret==-1) return 0;
+    if (ret==-1) return -1;
 
     string bids_dirname = "AUCTIONS/"+aid+"/BIDS";
     ret = mkdir(&bids_dirname[0], 0700);
     if (ret==-1){
         rmdir(&aid_dirname[0]);
-        return 0;
+        return -1;
     }
 
     string filename = aid_dirname+"/START_"+aid+".txt";
     FILE *fp = fopen(&filename[0], "w");    
-    if (fp==NULL) return 0;
-    fwrite(&start[0],sizeof(char),start.length(),fp);   
+    if (fp==NULL) return -1;
+    fwrite(&start_info[0],sizeof(char),start_info.size(),fp);   
     fclose(fp);
 
-    return 1;
+    return 0;
+}
+
+int loadAsset(string aid, string asset_fname, char* asset_buf){
+    string filename = "AUCTIONS/"+aid+"/"+asset_fname;
+    FILE* fp = fopen(&filename[0],"ab");
+    fwrite(asset_buf, sizeof(char), strlen(asset_buf),fp);
+    fclose(fp);
+    return 0;
 }
 
 int endAuction(string aid, string end_info){
     string filename = "AUCTIONS/"+aid+"/END_"+aid+".txt";
     FILE *fp = fopen(&filename[0], "w");    
-    if (fp==NULL) return 0;
+    if (fp==NULL) return -1;
     fwrite(&end_info[0],sizeof(char),end_info.length(),fp);   
     fclose(fp);
-    return 1;
+    return 0;
 }
 
 int createLogin(string uid){
-    if (!valid_uid(uid)) return 0;
-
     string filename = "USERS/"+uid+"/"+uid+"_login.txt";
-
     FILE *fp = fopen(&filename[0], "w");    
-    if (fp==NULL) return 0;
+    if (fp==NULL) return -1;
     fprintf(fp, "Logged in\n");
     fclose(fp);
-    return 1;
+    return 0;
 }
 
 int eraseLogin(string uid){
     string filename = "USERS/"+uid+"/"+uid+"_login.txt";
     unlink(&filename[0]);
-    return 1;       
+    return 0;       
 }
 
 int eraseUser(string uid){
@@ -96,16 +107,16 @@ int eraseUser(string uid){
     string pass_name = "USERS/"+uid+"/"+uid+"_pass.txt";
     unlink(&login_name[0]);
     unlink(&pass_name[0]);
-    return 1;       
+    return 0;       
 }
 
 int makeBid(string aid, string uid, string bid, string bid_info){
     string filename = "AUCTIONS/"+aid+"/BIDS/"+bid+".txt";
     FILE *fp = fopen(&filename[0], "w");    
-    if (fp==NULL) return 0;
+    if (fp==NULL) return -1;
     fwrite(&bid_info[0],sizeof(char),bid_info.length(),fp);
     fclose(fp);
-    return 1;
+    return 0;
 }
 
 vector<string> get_hosted(string uid){
@@ -155,6 +166,17 @@ vector<string> get_auction_bids(string aid){
         bids_list.push_back(bid);
     }
     return bids_list;
+}
+
+string get_unique_aid(){
+    string aid;
+    struct dirent **filelist;
+    int n_entries = scandir("AUCTIONS/",&filelist, 0,alphasort);
+    string aux = to_string(n_entries+1);
+    int len = 3-aux.size();
+    while(len--) aid += "0";
+    aid += aux;
+    return aid;
 }
 
 
@@ -244,7 +266,7 @@ int ended(string aid){
 int sv_login_process(string uid, string pass, string port, string ip){
     string msg, saved_pass;
     if (is_registered(uid)){
-        string pass_name = "USERS/"+uid+"/"+uid+"/_pass.txt";
+        string pass_name = "USERS/"+uid+"/"+uid+"_pass.txt";
         ifstream ifs(&pass_name[0],ifstream::in);
         ifs >> saved_pass;
         if (saved_pass != pass) msg = "RLI NOK";
@@ -256,9 +278,11 @@ int sv_login_process(string uid, string pass, string port, string ip){
     else{
         msg = "RLI REG";
         createUser(uid, pass);
+        createLogin(uid);
     }
-    send_message_udp(port,ip,msg);
-    return 1;
+    //send_message_udp(port,ip,msg);
+    cout << msg+"\n"; //for testing
+    return 0;
 }
 
 int sv_logout_process(string uid, string pass, string port, string ip){
@@ -270,8 +294,9 @@ int sv_logout_process(string uid, string pass, string port, string ip){
         eraseLogin(uid);
     }
 
-    send_message_udp(port, ip, msg);
-    return 1;
+    //send_message_udp(port, ip, msg);
+    cout << msg+"\n"; //for testing
+    return 0;
 }
 
 int sv_unregister_process(string uid, string pass, string port, string ip){
@@ -283,8 +308,9 @@ int sv_unregister_process(string uid, string pass, string port, string ip){
         eraseUser(uid);
     }
 
-    send_message_udp(port, ip, msg);
-    return 1;
+    //send_message_udp(port, ip, msg);
+    cout << msg+"\n"; //for testing
+    return 0;
 }
 
 int sv_myauctions_process(string uid, string port, string ip){
@@ -300,7 +326,7 @@ int sv_myauctions_process(string uid, string port, string ip){
         }
     }
     send_message_udp(port, ip, msg);
-    return 1;
+    return 0;
 }
 
 int sv_mybids_process(string uid, string port, string ip){
@@ -325,7 +351,7 @@ int sv_mybids_process(string uid, string port, string ip){
         }
     }
     send_message_udp(port, ip, msg);
-    return 1;
+    return 0;
 }
 
 int sv_list_process(string port, string ip){
@@ -341,7 +367,7 @@ int sv_list_process(string port, string ip){
         }
     }
     send_message_udp(port,ip,msg);
-    return 1;
+    return 0;
     }
 
 int sv_show_record_process(string aid, string port, string ip){
@@ -372,7 +398,28 @@ int sv_show_record_process(string aid, string port, string ip){
     }
 
     send_message_udp(port, ip, msg);
-    return 1;
+    return 0;
+}
+
+int sv_open_process(string uid,string input, string port, string ip){
+    string msg = "ROA", aid, name, start_value, timeactive, asset_fname, info;
+    istringstream iss(input);
+    if (!is_logged(uid)) msg += " NLG";
+    else{
+        aid = get_unique_aid();
+
+        iss >> name >> start_value >> timeactive >> asset_fname;
+        info = uid+" "+name+" "+asset_fname+start_value+timeactive;
+        if (createAuction(aid, info) == -1) msg += " NOK";
+        else {
+            char txt[8] = "mememan";
+            loadAsset(aid, asset_fname, txt);
+            msg += " OK "+aid;
+        }
+    }
+    //send_single_message_tcp(port, ip, msg);
+    cout << msg + "\n";
+    return 0;
 }
 
 int sv_close_process(string uid, string pass, string aid, string port, string ip){
@@ -387,7 +434,7 @@ int sv_close_process(string uid, string pass, string aid, string port, string ip
         endAuction(aid, end_info);
     }
     send_single_message_tcp(port, ip, msg);
-    return 1;
+    return 0;
 }
 
 int sv_bid_process(string uid, string pass, string aid, string bid, string port, string ip){
@@ -399,7 +446,7 @@ int sv_bid_process(string uid, string pass, string aid, string bid, string port,
     // get date and time
     bid_info = uid+" "+bid+" "+bid_datetime+" "+bid_sec_time; //complete pls
     makeBid(aid, uid, bid, bid_info);
-    return 1;
+    return 0;
 
 }
 
@@ -412,13 +459,16 @@ int main(int argc, char *argv[]){ //adicionar args e processar
     string port = PORT;
     bool verbose = false;
     for(int i = 1; i < argc; i++){
-      if (argv[i] == "-p"){
+      if (!strcmp(argv[i],"-p")){
         i++;
         port = argv[i];
       }
-      else if (argv[i] == "-v"){
+      else if (!strcmp(argv[i],"-v")){
         verbose = true; 
       }
     }
+     sv_login_process("190256", "password", "58000", "ipaddr");
+     sv_open_process("190256", "toy 100 1000 file.txt coisa coisa coisa", "58000", "ipaddr");
 
+    return 0;
 }
