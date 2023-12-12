@@ -1,7 +1,7 @@
 #include "sv_processes.h"
 #include "sv_actions.h"
 #include "sv_verifs.h"
-#include "../user/utils.h"
+#include "../common/utils.h"
 
 #include <fstream>
 #include <iostream>
