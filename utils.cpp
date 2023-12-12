@@ -64,7 +64,7 @@ bool valid_start_value(string value) { return value.size() <= 6 && all_of(value.
 bool valid_duration(string value) { return value.size() <= 5 && all_of(value.begin(), value.end(), ::isdigit);}
 
 bool valid_filename(string filename){
-  if (filename.size() > 10) return false;
+  if (filename.size() > 24) return false;
 
   for( char c : filename){
     if (c != '_' && c != '-' && c != '.' && !isdigit(c) && !isalnum(c)) return false;
@@ -124,23 +124,20 @@ void send_message_tcp(int fd, string message){
     if(write(fd,&message[0], message.size()) == -1) exit(1);
 }
 
-void send_message_tcp(int fd, string message, int size){
-    if(write(fd,&message[0], size) == -1) exit(1);
+void send_message_tcp(int fd,const char* message, int size){
+    if(write(fd,message, size) == -1) exit(1);
 }
+
+
 
 string receive_message_tcp(int fd){
-    char buffer[2000]; 
+    char buffer[512]; 
     memset(buffer,'\0',sizeof(buffer));  
-    if(read(fd,buffer,2000) == -1) exit(1);
+    if(read(fd,buffer,512) == -1) exit(1);
     return buffer;
 }
 
-string receive_message_tcp(int fd, int *size){
-    char buffer[2000]; 
-    memset(buffer,'\0',sizeof(buffer));  
-    if((*size = read(fd,buffer,2000)) == -1) exit(1);
-    return buffer;
-}
+
 
 void end_tcp(int fd,struct addrinfo *res){
     freeaddrinfo(res);

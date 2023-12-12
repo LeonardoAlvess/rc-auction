@@ -51,10 +51,8 @@ struct addrinfo* connect_tcp(int* fd, string port,string ip);
 
 void send_message_tcp(int fd, string message);
 
-void send_message_tcp(int fd, string message, int size);
+void send_message_tcp(int fd, const char* message, int size);
 
 string receive_message_tcp(int fd);
-
-string receive_message_tcp(int fd,int* size);
 
 void end_tcp(int fd,struct addrinfo *res);

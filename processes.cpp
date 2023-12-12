@@ -9,10 +9,9 @@
 #include <filesystem>
 #include <fcntl.h>
 #include <cstring>
-
-
 #include "processes.h"
 
+#define BLANK_SPACE 1
 using namespace std;  
 
 void login_process(string port, string ip, vector<string> args, string& log_uid, string& log_pass){
@@ -88,35 +87,38 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
     return;
   }
   
-  int file = open(&args[2][0], O_RDONLY);
+  FILE *file = fopen(&args[2][0], "rb");
   if(!file){
     cout << "ERROR: INVALID FILE\n";
     return;
   }  
 
-  uintmax_t size = filesystem::file_size(args[2]);    //to string quando for para enviar no tcp
-  if (!valid_filesize(to_string(size))){
+  uintmax_t total = 0, fsize = filesystem::file_size(args[2]);    
+  if (!valid_filesize(to_string(fsize))){
     cout << "ERROR: FILE TOO BIG\n";
-    close(file);
+    fclose(file);
     return;
   }
   
-  char buffer[20000];
+  char buffer[512];
   string received,aux;
-  int fd,fsize;
+  int fd,size;
   struct addrinfo *res;
-  res = connect_tcp(&fd,port,ip);
   aux ="OPA " + uid + " " + pass + " " + args[1] + " "
-     + args[3] + " " + args[4] + " "  + args[2] + " "  + to_string(size) + " ";
-  send_message_tcp(fd,aux,aux.size());
-  while((fsize = read(file,buffer,20000)) != 0){
-    send_message_tcp(fd,buffer,fsize);
+     + args[3] + " " + args[4] + " "  + args[2] + " "  + to_string(fsize) + " ";
   
+  res = connect_tcp(&fd,port,ip);
+  send_message_tcp(fd,aux.c_str(),aux.size());
+  while(total != fsize){
+    if((size = fread(buffer, sizeof(char),512,file)) == -1) exit(1);
+    total += size;
+    send_message_tcp(fd,buffer,size);
   }
+
   send_message_tcp(fd,"\n",1);
   received = receive_message_tcp(fd);
   end_tcp(fd,res);   
-  
+  fclose(file);
 
   istringstream iss(received);
   iss >> aux;
@@ -131,7 +133,6 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
     iss >> aux;
     cout << "Auction " + aux + " was started\n";
   }
-  
   
 }
 
@@ -216,38 +217,57 @@ void show_asset_process(string port, string ip, string aid){
     cout << "ERROR: INVALID AID\n";
     return;
   }
-  string code, status, file_name, file_size, file_data;
 
-  string received , aux= "SAS "+ aid +"\n";  
-  int fd,size;
+  string code, status, file_name;
+  string  aux= "SAS "+ aid +"\n";  
+  char received[512];
+  int fd,size,file_size,bytes_read;
   struct addrinfo *res;
+
+
   res = connect_tcp(&fd,port,ip);
-  send_message_tcp(fd,aux,aux.size());
-  received = receive_message_tcp(fd,&size);
+  send_message_tcp(fd,aux.c_str(),aux.size());
+  memset(received,'\0',sizeof(received));  
+  if((size = read(fd,received,512)) == -1) exit(1);
   istringstream iss(received);
-  iss >> code;
+  iss >> code >> status;
+
   if (code != "RSA"){
-    cout << "ERROR: UNEXPECTED SERVER RESPONSE\n";
-    return;
+      cout << "ERROR: UNEXPECTED SERVER RESPONSE\n";
+      return;
   }
-  iss >> status;
   if(status == "NOK"){
     cout << "ERROR: NO SUCH FILE TO BE SENT";
     return;
   }
-  iss >> file_name >> file_size;
-  int i = code.size() + status.size() + file_name.size() + file_size.size() + 4; // 4 = blank spaces
+  bytes_read = code.size() + status.size() + BLANK_SPACE*2;
 
-  int file = open(&file_name[0], O_WRONLY | O_CREAT, 0644);
-  cout << received;
-  write(file,&received[i],size-i);
-  while((received = receive_message_tcp(fd,&size)) != ""){
-    write(file,&received[0],size);
-    cout<< size << "\n";
+  if(size<10){
+    bytes_read = 0;
+    if((size = read(fd,received,512)) == -1) exit(1);
+    iss.clear();
+    iss.str(received);
   }
+  iss >> file_name >> file_size;
+  bytes_read += file_name.size() + to_string(file_size).size() + BLANK_SPACE*2;
+
+  file_size -= (size - bytes_read);
+  FILE *file = fopen(file_name.c_str(), "wb");
+  fwrite(received + bytes_read, sizeof(char), size - bytes_read, file);
+
+  while(file_size > 0){
+    memset(received,'\0',sizeof(received));  
+    if((size = read(fd,received,512)) == -1) exit(1);
+    file_size -= size;
+    if(file_size < 0) break;                                  //funciona mas deve haver maneira melhor
+    fwrite(received, sizeof(char), size, file);
+  }
+  fwrite(received, sizeof(char), size + file_size, file);     //write sem \n
+
   end_tcp(fd,res);   
-  close(file);
+  fclose(file);
   
+  cout << "File " + file_name + " received\n";
 }
 
 void bid_process(string port, string ip, vector<string> args, string uid, string pass){
