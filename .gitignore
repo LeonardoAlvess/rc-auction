@@ -1,8 +1,3 @@
 *.o
-*.out
-*.png
-*.jpg
-*.jpeg
-*.txt
 /.enunciado
 /.vscode
