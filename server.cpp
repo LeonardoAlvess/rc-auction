@@ -1,8 +1,15 @@
 #include "utils.h"
 #include "sv_processes.h"
 #include <cstring>
+#include <iostream>
 
 using namespace std;
+
+//call this func right after socket chosen and messaeg received 
+int send_verbose_msg(string uid, string req, string ip, string port){
+  string msg = "User "+uid+" made a "+req+" request from "+ip+":"+port;
+  cout << msg;
+}
 
 int main(int argc, char *argv[]){ //adicionar args e processar
     string port = PORT;

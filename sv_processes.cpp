@@ -165,8 +165,7 @@ int sv_open_process(string uid,string input, string port, string ip){
         iss >> name >> start_value >> timeactive >> asset_fname;
         info = uid+" "+name+" "+asset_fname+" "+start_value+" "+timeactive+ " " + get_current_time();
 
-
-        if (createAuction(aid, info) == -1) msg += " NOK";
+        if (aid == "1000" || createAuction(aid, info) == -1) msg += " NOK";
         else {
             hostAuction(aid, uid);
             char txt[8] = "mememan";
