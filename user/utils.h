@@ -1,3 +1,6 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <string>
 using namespace std;
 
@@ -56,3 +59,5 @@ void send_message_tcp(int fd, const char* message, int size);
 string receive_message_tcp(int fd);
 
 void end_tcp(int fd,struct addrinfo *res);
+
+#endif UTILS_H

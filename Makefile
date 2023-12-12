@@ -1,30 +1,34 @@
 CC = g++
 CFLAGS = -std=c++17 -Wall -g
 
-SRC = user.cpp processes.cpp utils.cpp server.cpp sv_processes.cpp sv_actions.cpp sv_verifs.cpp
-OBJ = $(SRC:%.cpp=%.o)
+USER_SRC = user/user.cpp user/processes.cpp user/utils.cpp
+USER_OBJ = $(USER_SRC:%.cpp=%.o)
 
-EXECUTABLES = user AS
+SERVER_SRC = as/server.cpp as/sv_processes.cpp as/sv_actions.cpp as/sv_verifs.cpp user/utils.cpp
+SERVER_OBJ = $(SERVER_SRC:%.cpp=%.o)
+
+EXECUTABLES = user as
 
 all: $(EXECUTABLES)
 
-user: user.o processes.o utils.o
-	$(CC) $(CFLAGS) $^ -o $@
+user: $(USER_OBJ)
+	$(CC) $(CFLAGS) $^ -o client
 
-AS: server.o sv_processes.o sv_verifs.o sv_actions.o utils.o 
-	$(CC) $(CFLAGS) $^ -o $@
+as: $(SERVER_OBJ)
+	$(CC) $(CFLAGS) $^ -o server
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
-user.o: processes.h
-processes.o: processes.h utils.h
-server.o: utils.h sv_processes.h
-sv_processes.o: sv_processes.h sv_actions.h sv_verifs.h utils.h
-sv_actions.o: sv_actions.h sv_verifs.h
-sv_verifs.o: sv_verifs.h utils.h
+user.o: user/processes.h user/utils.h
+processes.o: user/processes.h user/utils.h
+server.o: user/utils.h as/sv_processes.h
+sv_processes.o: as/sv_processes.h as/sv_actions.h as/sv_verifs.h user/utils.h
+sv_actions.o: as/sv_actions.h as/sv_verifs.h
+sv_verifs.o: as/sv_verifs.h user/utils.h
 
 .PHONY: clean
 
 clean:
-	rm -f $(OBJ) $(EXECUTABLES)
+	rm -f user/*.o as/*.o
+	rm -f as.o user.o
