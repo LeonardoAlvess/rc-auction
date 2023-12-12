@@ -1,6 +1,9 @@
-*.out
-*.png
+client
+server
+*.o
 *.jpg
 *.txt
+*.jpeg
+*.png
 /.enunciado
 /.vscode
