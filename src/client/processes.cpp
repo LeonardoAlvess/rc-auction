@@ -43,7 +43,7 @@ void login_process(string port, string ip, vector<string> args, string& log_uid,
   }
   
   // Send the login command to the server threw UDP
-  string received = send_message_udp(port, ip, "LIN " + uid + " " + password + "\n", USER_MODE);
+  string received = send_message_udp(port, ip, "LIN " + uid + " " + password + "\n",USER_MODE);
   
   // Parse the response
   istringstream iss(received);
@@ -83,7 +83,7 @@ void logout_process(string port, string ip, string& log_uid, string& log_pass){
 
 
   //Send the logout command to the server
-  string received = send_message_udp(port, ip, "LOU " + log_uid + " " + log_pass + "\n", USER_MODE);
+  string received = send_message_udp(port, ip, "LOU " + log_uid + " " + log_pass + "\n",USER_MODE);
   
   //Parse the response
   istringstream iss(received);
@@ -119,7 +119,7 @@ void unregister_process(string port, string ip, string& log_uid, string& log_pas
   */
 
   //Send the unregister command to the server
-  string received = send_message_udp(port, ip, "UNR " + log_uid + " " + log_pass + "\n", USER_MODE);
+  string received = send_message_udp(port, ip, "UNR " + log_uid + " " + log_pass + "\n",USER_MODE);
   
   //Parse the response
   istringstream iss(received);
@@ -195,11 +195,11 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
     return;
   }
   
-  char buffer[512];
+  char buffer[BUFFER_SIZE];
   string received,code,status,aux;
   int fd,size;
   struct addrinfo *res;
-  cout << "1\n";
+
   // Create the message to send
   aux ="OPA " + uid + " " + pass + " " + args[1] + " "
      + args[3] + " " + args[4] + " "  + args[2] + " "  + to_string(fsize) + " ";
@@ -207,26 +207,25 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
   // Send the message to the server
   res = connect_tcp(&fd,port,ip);
   send_message_tcp(fd,aux.c_str(),aux.size());
-  cout << "1\n";
+  
   // Read/Send the file to the server
   while(total != fsize){
-    if((size = fread(buffer, sizeof(char),512,file)) == -1) exit(1);
+    if((size = fread(buffer, sizeof(char),BUFFER_SIZE,file)) == -1) exit(1);
     total += size;
     send_message_tcp(fd,buffer,size);
   }
-  cout << "4\n";
+  
   // Send the end of file message
   send_message_tcp(fd,"\n",1);
-  cout << "1\n";
+  
 
   // Receive the response
   received = receive_message_tcp(fd);
-  cout << "1\n";
-
+  
   // Close the connection
   end_tcp(fd,res);   
   fclose(file);
-  cout << "1\n";
+  
   
   // Parse the response
   istringstream iss(received);
@@ -302,7 +301,7 @@ void my_auctions_process(string port, string ip, string uid){
    */
 
   // Send command to server
-  string received = send_message_udp(port, ip, "LMA " + uid + "\n", USER_MODE);
+  string received = send_message_udp(port, ip, "LMA " + uid + "\n",USER_MODE);
   
   // Parse the first part of the response
   istringstream iss(received);
@@ -344,7 +343,7 @@ void my_bids_process(string port, string ip, string uid){
    */
 
   //sends a message to the server
-  string received = send_message_udp(port, ip, "LMB " + uid + "\n", USER_MODE);
+  string received = send_message_udp(port, ip, "LMB " + uid + "\n",USER_MODE);
 
   // Parses the first part of the response
   istringstream iss(received);
@@ -385,7 +384,7 @@ void list_process(string port, string ip){
   */
 
   //sends a message to the server
-  string received = send_message_udp(port, ip, "LST\n", USER_MODE);
+  string received = send_message_udp(port, ip, "LST\n",USER_MODE);
   
   // Parses the first part of the response
   istringstream iss(received);
@@ -427,12 +426,12 @@ void show_asset_process(string port, string ip, string aid){
 
   // Check if the auction aid is valid
   if (!valid_aid(aid)){
-    cout << "Invalid aid\n";
+    cout << "Invalid AID\n";
     return;
   }
 
   string code, status, file_name;
-  char received[512];
+  char received[BUFFER_SIZE];
   int fd, size, file_size, bytes_read;
   struct addrinfo *res;
 
@@ -444,8 +443,7 @@ void show_asset_process(string port, string ip, string aid){
   send_message_tcp(fd, aux.c_str(), aux.size());
 
   // Read the first response
-  memset(received, '\0', sizeof(received));
-  if ((size = read(fd, received, 512)) == -1) exit(1);
+  size = receive_message_tcp(fd, received);
   
   // Parse the response
   istringstream iss(received);
@@ -460,15 +458,14 @@ void show_asset_process(string port, string ip, string aid){
 
   // Print the response
   if (status == "NOK")
-  {//list bugged
-    cout << "ERROR: NO SUCH FILE TO BE SENT";
+  {
+    cout << "There was an error displaying the asset\n";
     return;
   }
 
   // Get the code and status message lenght
   bytes_read = code.size() + status.size() + BLANK_SPACE * 2;
-  cout << received << "\n";
-  cout << size << "\n";
+
   // In case the first response only contains the code and status
   if (size == bytes_read)
   {
@@ -476,8 +473,7 @@ void show_asset_process(string port, string ip, string aid){
     bytes_read = 0;
 
     // Read the next response
-    if ((size = read(fd, received, 512)) == -1)
-      exit(1);
+    size = receive_message_tcp(fd, received);
     
     // Reset the string stream
     iss.clear();
@@ -496,31 +492,33 @@ void show_asset_process(string port, string ip, string aid){
   // Create the file
   FILE *file = fopen(file_name.c_str(), "wb");
 
-  // Write the first part of the file
-  fwrite(received + bytes_read, sizeof(char), size - bytes_read, file);
-
-  // Read from the server and write the rest of the file
-  while (total + 512 < file_size)
-  {
-    memset(received, '\0', sizeof(received));
-
-    // Read from the server
-    if ((size = read(fd, received, 512)) == -1)
-      exit(1);
- 
-    total += size;
-    
-    // Write to the file
-    fwrite(received, sizeof(char), size, file);
+  // In case the file size was smaller than the buffer size
+  if ( total > file_size ){
+    fwrite(received + bytes_read, sizeof(char), file_size , file);
   }
+  else
+  {
+    // Write the first part of the file´
+    fwrite(received + bytes_read, sizeof(char), size - bytes_read, file);
 
-  // Last read/write, excludes any extra bytes
-  memset(received, '\0', sizeof(received));
-  // Read from the server
-  if ((size = read(fd, received, 512)) == -1)
-    exit(1);
-  total += size;
-  fwrite(received, sizeof(char), size + (file_size - total), file);
+    // Read from the server and write the rest of the file
+    while (total + BUFFER_SIZE < file_size)
+    {
+      memset(received, '\0', sizeof(received));
+
+      // Read from the server
+      size = receive_message_tcp(fd, received);
+      total += size;
+
+      // Write to the file
+      fwrite(received, sizeof(char), size, file);
+    }
+
+    // Last read/write, excludes any extra bytes
+    size = receive_message_tcp(fd, received);
+    total += size;
+    fwrite(received, sizeof(char), size + (file_size - total), file);
+  }
 
   // Close the connection
   end_tcp(fd, res);
@@ -545,13 +543,13 @@ void bid_process(string port, string ip, vector<string> args, string uid, string
 
   // check if the aid is valid
   if (!valid_aid(aid)){
-    cout << "ERROR: INVALID AID\n";
+    cout << "Invalid AID\n";
     return;
   }
 
   // check if the bid is valid
   if (!valid_bid(bid)){
-    cout << "ERROR: INVALID BID\n";
+    cout << "Invalid bid\n";
     return;
   }
   
@@ -589,14 +587,14 @@ void show_record_process(string port, string ip, string aid){
 
   //Check if the auction ID is valid
   if (!valid_aid(aid)){
-    cout << "Invalid aid\n";
+    cout << "Invalid AID\n";
     return;
   }
 
   string host_UID, auction_name, asset_fname, start_value, start_date, start_time, timeactive;
   string bidder_UID, bid_value, bid_date, bid_time, bid_sec_time;
   string end_date, end_time, end_sec_time;
-  string code,status,received = send_message_udp(port, ip, "SRC " + aid + "\n", USER_MODE);
+  string code,status,received = send_message_udp(port, ip, "SRC " + aid + "\n",USER_MODE);
 
   // Parse the first part of the response
   istringstream iss(received);
@@ -625,14 +623,17 @@ void show_record_process(string port, string ip, string aid){
            "Starting time "+start_date+" "+start_time+"\n"
            "Auction duration: "+timeactive+"\n";
 
-    // Display the bid history
-    cout << "---------------------------------------------------\n"
-            "                   BID HISTORY                     \n"
-            "---------------------------------------------------\n";
-
+    bool bid_history = true;
     //Go through the information and display the bids and the end of the auction
     while(iss >> code){
       if (code == "B"){
+        if(bid_history == true){
+          // Display the bid history if there are any bids
+          cout << "---------------------------------------------------\n"
+                  "                   BID HISTORY                     \n"
+                  "---------------------------------------------------\n";
+          bid_history = false;
+        }
         iss >> bidder_UID >> bid_value >> bid_date >> bid_time >> bid_sec_time;
 
         cout << bid_date+" "+bid_time+" : User "+bidder_UID+" bid "+bid_value+" credits \n"+
@@ -642,8 +643,8 @@ void show_record_process(string port, string ip, string aid){
       else if (code == "E"){
         
         iss >> end_date >> end_time >> end_sec_time;
-        cout << "Auction ended at "+end_date+" "+end_time+"\n"
-                +end_sec_time+"seconds since start\n";
+        cout << "Auction ended at " + end_date + " " + end_time + "\n"
+                +end_sec_time+" seconds since start\n";
       }
       else break;
     }    

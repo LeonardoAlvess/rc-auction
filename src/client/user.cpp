@@ -10,15 +10,19 @@ int main(int argc, char *argv[]){
     vector<string> args;
     istringstream iss;
     int stay = 1;
-    
-    string ip = "localhost",port = PORT;       //default values for ip and port
 
-    for(int i = 1; i < argc; i++){    //reading ip and port from command line
-      if (!strcmp(argv[i],"-n")){     //if -n is found, next argument is ip 
+    //default values for ip and port
+    string ip = IP,port = PORT;       
+
+    //reading ip and port from command line
+    for(int i = 1; i < argc; i++){    
+      // if -n is found, next argument is ip 
+      if (!strcmp(argv[i],"-n")){     
         i++;
         ip = argv[i];             
       }
-      else if (!strcmp(argv[i],"-p")){ //if -p is found, next argument is port
+      //if -p is found, next argument is port
+      else if (!strcmp(argv[i],"-p")){ 
         i++;
         port = argv[i];
       }
@@ -32,33 +36,41 @@ int main(int argc, char *argv[]){
         cout << "["+uid+"]: ";
       else
         cout << "[No User]: ";
-      getline(cin,line);        //getting line string from input
-      iss.clear();              //resetting line stream
-      iss.str(line);            //turning line into a stream
+      
+      //getting line string from input
+      getline(cin,line);
 
-      args.clear();             //resseting argument vector
+      //resetting line stream and argument vector       
+      iss.clear();              
+      iss.str(line);            
+      args.clear();
+
+      //reading from line stream and filling argument vector
       while(iss >> token){      
-        args.push_back(token);  //reading from line stream and filling argument vector
+        args.push_back(token);  
       }
 
-      int code = getCommandType(args[0]);   //converting command string to int for switch case
+      //converting command string to int for switch case
+      int code = getCommandType(args[0]);   
 
-      if (!valid_N_args(code, args.size())){   // check if number of arguments is correct
+      // check if number of arguments is correct
+      if (!valid_N_args(code, args.size())){   
         cout << "Wrong number of arguments\n";
         continue;
       }
       
-      switch (code)       //switch case for each command          
+      //switch case for each command  
+      switch (code)          
       {
-      case LOGIN:          //login command
+      case LOGIN:                                     //login command
         if (uid != ""){  
-          cout << "User"+uid+" is already logged in\n";
+          cout << "User "+uid+" is already logged in\n";
           break;
         }
         login_process(port,ip,args,uid,pass);
         break;
 
-      case LOGOUT:         //logout command
+      case LOGOUT:                                    //logout command
         if (uid == ""){  
           cout << "No user logged in\n";    
           break;
@@ -67,7 +79,7 @@ int main(int argc, char *argv[]){
         logout_process(port,ip,uid,pass);
         break;
 
-      case UNREGISTER:      //unregister command
+      case UNREGISTER:                                //unregister command
         if (uid == ""){  
           cout << "No user logged in\n";
           break;
@@ -77,7 +89,7 @@ int main(int argc, char *argv[]){
 
         break;
 
-      case EXIT:             //exit command
+      case EXIT:                                      //exit command
         if (uid != ""){  
           cout << "User is "+uid+" still logged in, use log out command\n";
           break;
@@ -86,7 +98,7 @@ int main(int argc, char *argv[]){
         cout << "User closing\n";
         break;
 
-      case OPEN_AUCTION:      //open auction command
+      case OPEN_AUCTION:                              //open auction command
          if (uid == ""){  
           cout << "No user logged in\n";
           break;
@@ -94,7 +106,7 @@ int main(int argc, char *argv[]){
         open_auction_process(port,ip,args, uid, pass);
         break;
       
-      case CLOSE_AUCTION:      //close auction command
+      case CLOSE_AUCTION:                             //close auction command
         if (uid == ""){  
           cout << "No user logged in\n";
           break;
@@ -102,7 +114,7 @@ int main(int argc, char *argv[]){
         close_auction_process(port,ip,args, uid, pass);
         break;
       
-      case MY_AUCTIONS:         //my auctions command
+      case MY_AUCTIONS:                               //my auctions command
         if (uid == ""){  
           cout << "No user logged in\n";
           break;
@@ -110,7 +122,7 @@ int main(int argc, char *argv[]){
         my_auctions_process(port,ip,uid);
         break;
 
-      case MY_BIDS:              //my bids command          
+      case MY_BIDS:                                   //my bids command          
         if (uid == ""){  
           cout << "No user logged in\n";
           break;
@@ -118,7 +130,7 @@ int main(int argc, char *argv[]){
         my_bids_process(port,ip,uid);
         break;
 
-      case LIST:                 //list command             
+      case LIST:                                      //list command             
         if (uid == ""){  
           cout << "No user logged in\n";
           break;
@@ -126,7 +138,7 @@ int main(int argc, char *argv[]){
         list_process(port,ip);
         break;
       
-      case SHOW_ASSET:           //show asset command     
+      case SHOW_ASSET:                                //show asset command     
         if (uid == ""){  
           cout << "No user logged in\n";
           break;
@@ -134,7 +146,7 @@ int main(int argc, char *argv[]){
         show_asset_process(port,ip,args[1]);
         break;
       
-      case BID:                   //bid command         
+      case BID:                                       //bid command         
         if (uid == ""){  
             cout << "No user logged in\n";
             break;
@@ -142,7 +154,7 @@ int main(int argc, char *argv[]){
         bid_process(port,ip,args, uid, pass);
         break;
       
-      case SHOW_RECORD:            //show record command          
+      case SHOW_RECORD:                               //show record command          
         if (uid == ""){  
           cout << "No user logged in\n";
           break;
@@ -150,12 +162,11 @@ int main(int argc, char *argv[]){
         show_record_process(port,ip,args[1]);
         break;
 
-      default:                    //default case for invalid command      
+      default:                                        //default case for invalid command      
       cout << "Invalid command\n";
         break;
       }
     
     }
 }
-
 

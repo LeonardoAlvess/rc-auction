@@ -3,6 +3,7 @@ using namespace std;
 
 #define PORT "58011"     
 #define IP "tejo.tecnico.ulisboa.pt"
+#define BUFFER_SIZE 512
 
 enum CommandType {
     LOGIN,
@@ -59,5 +60,7 @@ void send_message_tcp(int fd, string message);
 void send_message_tcp(int fd, const char* message, int size);
 
 string receive_message_tcp(int fd);
+
+int receive_message_tcp(int fd, char* buffer);
 
 void end_tcp(int fd,struct addrinfo *res);
