@@ -29,8 +29,9 @@ int sv_login_process(string uid, string pass, string port, string ip){
         createUser(uid, pass);
         createLogin(uid);
     }
-    //send_message_udp(port,ip,msg);
-    cout << msg+"\n"; //for testing
+    msg+="\n";
+    send_message_udp(port,ip,msg, SERVER_MODE);
+    //cout << msg; for testing
     return 0;
 }
 
@@ -43,9 +44,9 @@ int sv_logout_process(string uid, string pass, string port, string ip){
         msg = "RLO OK";
         eraseLogin(uid);
     }
-
-    //send_message_udp(port, ip, msg);
-    cout << msg+"\n"; //for testing
+    msg += "\n";
+    send_message_udp(port, ip, msg, SERVER_MODE);
+    //cout << msg+"\n"; for testing
     return 0;
 }
 
@@ -59,7 +60,7 @@ int sv_unregister_process(string uid, string pass, string port, string ip){
         eraseUser(uid);
     }
 
-    //send_message_udp(port, ip, msg);
+    //send_message_udp(port, ip, msg, USER_MODE);
     cout << msg+"\n"; //for testing
     return 0;
 }
@@ -78,7 +79,7 @@ int sv_myauctions_process(string uid, string port, string ip){
             msg += " "+ *it + " " + state;
         }
     }
-    //send_message_udp(port, ip, msg);
+    //send_message_udp(port, ip, msg, USER_MODE);
     cout << msg+"\n";
     return 0;
 }
@@ -106,7 +107,7 @@ int sv_mybids_process(string uid, string port, string ip){
             msg += " "+ *it + " " + state;
         }
     }
-    //send_message_udp(port, ip, msg);
+    //send_message_udp(port, ip, msg, USER_MODE);
     cout << msg+"\n";
     return 0;
 }
@@ -123,7 +124,7 @@ int sv_list_process(string port, string ip){
             msg += " "+ *it + " " + state;
         }
     }
-    //send_message_udp(port,ip,msg);
+    //send_message_udp(port,ip,msg, USER_MODE);
     cout << msg+"\n";
     return 0;
     }
@@ -159,7 +160,7 @@ int sv_show_record_process(string aid, string port, string ip){
         }
     }
 
-    //send_message_udp(port, ip, msg);
+    //send_message_udp(port, ip, msg, USER_MODE);
     cout << msg+"\n";
     return 0;
 }

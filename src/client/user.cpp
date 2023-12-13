@@ -11,7 +11,7 @@ int main(int argc, char *argv[]){
     istringstream iss;
     int stay = 1;
     
-    string ip = IP,port = PORT;       //default values for ip and port
+    string ip = "localhost",port = PORT;       //default values for ip and port
 
     for(int i = 1; i < argc; i++){    //reading ip and port from command line
       if (!strcmp(argv[i],"-n")){     //if -n is found, next argument is ip 

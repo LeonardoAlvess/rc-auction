@@ -13,7 +13,7 @@
 #include <cstring>
 #include "utils.h"
 using namespace std;        
-using namespace std::filesystem;       
+using namespace std::filesystem;
 
 // create docstrings for each function
 
@@ -90,7 +90,7 @@ bool valid_filesize(string filesize){ return filesize.size() <= 8;}
 
 bool valid_bid(string bid) { return bid.size() <= 5 && all_of(bid.begin(), bid.end(), ::isdigit);}
 
-string send_message_udp(string port, string ip,string message){
+string send_message_udp(string port, string ip,string message, CALL_MODE mode){
   int fd; 
   ssize_t size;
   socklen_t addrlen;
@@ -105,8 +105,11 @@ string send_message_udp(string port, string ip,string message){
   if(getaddrinfo(&ip[0],&port[0],&hints,&res) == -1) exit(1);
   if(sendto(fd,&message[0],message.size(),0,res->ai_addr,res->ai_addrlen) == -1) exit(1);
   addrlen=sizeof(addr);
-  if((size=recvfrom(fd,buffer,6015,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);     
 
+  if (mode == USER_MODE){
+    if((size=recvfrom(fd,buffer,6015,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);     
+  }
+  
   freeaddrinfo(res);
   close(fd);
   return buffer;

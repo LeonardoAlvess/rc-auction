@@ -20,6 +20,11 @@ enum CommandType {
     UNKNOWN_COMMAND
 };
 
+enum CALL_MODE {
+    USER_MODE, 
+    SERVER_MODE
+};
+
 
 int getCommandType(const string& command);
 
@@ -43,7 +48,7 @@ bool valid_filesize(string filesize);
 
 bool valid_bid(string bid);
 
-string send_message_udp(string port,string ip, string message);
+string send_message_udp(string port,string ip, string message, CALL_MODE mode);
 
 string send_single_message_tcp( string port, string ip, string message);
 

@@ -43,7 +43,7 @@ void login_process(string port, string ip, vector<string> args, string& log_uid,
   }
   
   // Send the login command to the server threw UDP
-  string received = send_message_udp(port, ip, "LIN " + uid + " " + password + "\n");
+  string received = send_message_udp(port, ip, "LIN " + uid + " " + password + "\n", USER_MODE);
   
   // Parse the response
   istringstream iss(received);
@@ -83,7 +83,7 @@ void logout_process(string port, string ip, string& log_uid, string& log_pass){
 
 
   //Send the logout command to the server
-  string received = send_message_udp(port, ip, "LOU " + log_uid + " " + log_pass + "\n");
+  string received = send_message_udp(port, ip, "LOU " + log_uid + " " + log_pass + "\n", USER_MODE);
   
   //Parse the response
   istringstream iss(received);
@@ -119,7 +119,7 @@ void unregister_process(string port, string ip, string& log_uid, string& log_pas
   */
 
   //Send the unregister command to the server
-  string received = send_message_udp(port, ip, "UNR " + log_uid + " " + log_pass + "\n");
+  string received = send_message_udp(port, ip, "UNR " + log_uid + " " + log_pass + "\n", USER_MODE);
   
   //Parse the response
   istringstream iss(received);
@@ -302,7 +302,7 @@ void my_auctions_process(string port, string ip, string uid){
    */
 
   // Send command to server
-  string received = send_message_udp(port, ip, "LMA " + uid + "\n");
+  string received = send_message_udp(port, ip, "LMA " + uid + "\n", USER_MODE);
   
   // Parse the first part of the response
   istringstream iss(received);
@@ -344,7 +344,7 @@ void my_bids_process(string port, string ip, string uid){
    */
 
   //sends a message to the server
-  string received = send_message_udp(port, ip, "LMB " + uid + "\n");
+  string received = send_message_udp(port, ip, "LMB " + uid + "\n", USER_MODE);
 
   // Parses the first part of the response
   istringstream iss(received);
@@ -385,7 +385,7 @@ void list_process(string port, string ip){
   */
 
   //sends a message to the server
-  string received = send_message_udp(port, ip, "LST\n");
+  string received = send_message_udp(port, ip, "LST\n", USER_MODE);
   
   // Parses the first part of the response
   istringstream iss(received);
@@ -596,7 +596,7 @@ void show_record_process(string port, string ip, string aid){
   string host_UID, auction_name, asset_fname, start_value, start_date, start_time, timeactive;
   string bidder_UID, bid_value, bid_date, bid_time, bid_sec_time;
   string end_date, end_time, end_sec_time;
-  string code,status,received = send_message_udp(port, ip, "SRC " + aid + "\n");
+  string code,status,received = send_message_udp(port, ip, "SRC " + aid + "\n", USER_MODE);
 
   // Parse the first part of the response
   istringstream iss(received);
