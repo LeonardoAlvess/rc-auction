@@ -195,7 +195,6 @@ string send_message_udp(string port, string ip,string message, CALL_MODE mode){
     return buffer;
 }
 
-
 string send_single_message_tcp(string port, string ip, string message){
     /**
      * @brief Sends a single message through tcp and returns the response,
@@ -258,8 +257,6 @@ void send_message_tcp(int fd,const char* message, int size){
     */
     if(write(fd,message, size) == -1) exit(1);
 }
-
-
 
 string receive_message_tcp(int fd){
     /**

@@ -163,7 +163,9 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
   }
 
   // Check if the file name is valid
-  if(!valid_filename(args[2])){
+  filesystem::path file_path(args[2]);
+  string file_name = file_path.filename();
+  if(!valid_filename(file_name)){
     cout << "Invalid file name\n";
     return;
   }
@@ -202,7 +204,7 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
 
   // Create the message to send
   aux ="OPA " + uid + " " + pass + " " + args[1] + " "
-     + args[3] + " " + args[4] + " "  + args[2] + " "  + to_string(fsize) + " ";
+     + args[3] + " " + args[4] + " "  + file_name + " "  + to_string(fsize) + " ";
   
   // Send the message to the server
   res = connect_tcp(&fd,port,ip);
