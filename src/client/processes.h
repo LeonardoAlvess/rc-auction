@@ -1,6 +1,5 @@
 #include <string>
 #include <vector>
-
 #include "../common/utils.h"
 
 using namespace std;

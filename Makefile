@@ -1,10 +1,10 @@
 CC = g++
 CFLAGS = -std=c++17 -Wall -g
 
-CLIENT_SRC = client/user.cpp client/processes.cpp common/utils.cpp
+CLIENT_SRC = src/client/user.cpp src/client/processes.cpp src/common/utils.cpp
 CLIENT_OBJ = $(CLIENT_SRC:%.cpp=%.o)
 
-SERVER_SRC = server/server.cpp server/sv_processes.cpp server/sv_files.cpp server/sv_verifs.cpp common/utils.cpp
+SERVER_SRC = src/server/server.cpp src/server/sv_processes.cpp src/server/sv_files.cpp src/server/sv_verifs.cpp src/common/utils.cpp
 SERVER_OBJ = $(SERVER_SRC:%.cpp=%.o)
 
 EXECUTABLES = client server
@@ -30,6 +30,6 @@ sv_verifs.o: server/sv_verifs.h common/utils.h
 .PHONY: clean
 
 clean:
-	rm -f client/*.o server/*.o
+	rm -f src/client/*.o src/server/*.o
 	rm -f user AS
-	rm -f common/*.o
+	rm -f src/common/*.o

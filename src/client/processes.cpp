@@ -32,13 +32,13 @@ void login_process(string port, string ip, vector<string> args, string& log_uid,
   
   // Check if the user id is valid
   if(!valid_uid(uid)){
-    cout << "ERROR: INVALID UID\n";
+    cout << "Invalid uid\n";
     return;
   }
 
   // Check if the password is valid
   if(!valid_password(password)){
-    cout << "ERROR: INVALID PASSWORD\n";
+    cout << "Invalid password\n";
     return;
   }
   
@@ -49,7 +49,7 @@ void login_process(string port, string ip, vector<string> args, string& log_uid,
   istringstream iss(received);
   string code, status;
   iss >> code >> status;
-
+  
   // Check if the server response is valid
   if(code != "RLI"){
     cout << "Unexpected server response\n";
@@ -57,11 +57,11 @@ void login_process(string port, string ip, vector<string> args, string& log_uid,
   }
 
   // Print the response
-  if( status == "NOK\n"){
+  if( status == "NOK"){
     cout << "Login Failed\n";
     return;
   }
-  else if (status == "OK\n"){
+  else if (status == "OK"){
     cout << "Login Successful\n";
   }
   else cout << "User registered\n";
@@ -196,10 +196,10 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
   }
   
   char buffer[512];
-  string received,aux;
+  string received,code,status,aux;
   int fd,size;
   struct addrinfo *res;
-
+  cout << "1\n";
   // Create the message to send
   aux ="OPA " + uid + " " + pass + " " + args[1] + " "
      + args[3] + " " + args[4] + " "  + args[2] + " "  + to_string(fsize) + " ";
@@ -207,38 +207,42 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
   // Send the message to the server
   res = connect_tcp(&fd,port,ip);
   send_message_tcp(fd,aux.c_str(),aux.size());
-  
+  cout << "1\n";
   // Read/Send the file to the server
   while(total != fsize){
     if((size = fread(buffer, sizeof(char),512,file)) == -1) exit(1);
     total += size;
     send_message_tcp(fd,buffer,size);
   }
-
+  cout << "4\n";
   // Send the end of file message
   send_message_tcp(fd,"\n",1);
+  cout << "1\n";
+
+  // Receive the response
+  received = receive_message_tcp(fd);
+  cout << "1\n";
 
   // Close the connection
   end_tcp(fd,res);   
   fclose(file);
-
+  cout << "1\n";
+  
   // Parse the response
-  received = receive_message_tcp(fd);
   istringstream iss(received);
-  iss >> aux;
+  iss >> code >> status;
 
   // Check if the server response is valid
-  if (aux != "ROA"){
+  if (code != "ROA"){
     cout << "Unexpected server response\n";
     return;
   }
 
-
   // Print the response
-  iss >> aux;
-  if (aux == "NOK") cout << "Auction couldn't be started\n";
-  else if (aux == "NLG") cout << "No user logged in\n";
-  else if (aux == "OK"){
+  if (status == "NOK") cout << "Auction couldn't be started\n";
+  else if (status == "NLG") cout << "No user logged in\n";
+  else {
+    iss >> aux;
     cout << "Auction " + aux + " was started\n";
   }
   
@@ -389,7 +393,7 @@ void list_process(string port, string ip){
   iss >> code >> status;
 
   // Check if the server response is valid
-  if(code != "RMB"){
+  if(code != "RLS"){
     cout << "Unexpected server response\n";
     return;
   }
@@ -401,11 +405,7 @@ void list_process(string port, string ip){
   }
 
   // If there are auctions, parses the rest of the response
-  string aid,state;                     
-  istringstream iss(received);
-  iss >> aid;
-  iss >> aid;
-
+  string aid,state;
   while(iss >> aid){
     iss >> state;
     // Transforms the state from 1/0 to Active/Closed
@@ -460,16 +460,17 @@ void show_asset_process(string port, string ip, string aid){
 
   // Print the response
   if (status == "NOK")
-  {
+  {//list bugged
     cout << "ERROR: NO SUCH FILE TO BE SENT";
     return;
   }
 
   // Get the code and status message lenght
   bytes_read = code.size() + status.size() + BLANK_SPACE * 2;
-
+  cout << received << "\n";
+  cout << size << "\n";
   // In case the first response only contains the code and status
-  if (size < 10)  //#TODO mudar e testar
+  if (size == bytes_read)
   {
     // Reset the bytes read
     bytes_read = 0;
@@ -489,8 +490,8 @@ void show_asset_process(string port, string ip, string aid){
   // Add the file name and file_size message lenght
   bytes_read += file_name.size() + to_string(file_size).size() + BLANK_SPACE * 2;
 
-  //#TODO mudar e testar
-  file_size -= (size - bytes_read);
+  // Store total size of the file data received
+  int total = size - bytes_read;
 
   // Create the file
   FILE *file = fopen(file_name.c_str(), "wb");
@@ -499,23 +500,27 @@ void show_asset_process(string port, string ip, string aid){
   fwrite(received + bytes_read, sizeof(char), size - bytes_read, file);
 
   // Read from the server and write the rest of the file
-  while (file_size > 0)
+  while (total + 512 < file_size)
   {
     memset(received, '\0', sizeof(received));
 
     // Read from the server
     if ((size = read(fd, received, 512)) == -1)
       exit(1);
-
-    //#TODO mudar e testar  
-    file_size -= size;
-    if (file_size < 0)
-      break;
+ 
+    total += size;
     
     // Write to the file
     fwrite(received, sizeof(char), size, file);
   }
-  fwrite(received, sizeof(char), size + file_size, file); //write sem \n
+
+  // Last read/write, excludes any extra bytes
+  memset(received, '\0', sizeof(received));
+  // Read from the server
+  if ((size = read(fd, received, 512)) == -1)
+    exit(1);
+  total += size;
+  fwrite(received, sizeof(char), size + (file_size - total), file);
 
   // Close the connection
   end_tcp(fd, res);
@@ -524,88 +529,117 @@ void show_asset_process(string port, string ip, string aid){
   cout << "File " + file_name + " received\n";
 }
 
-void bid_process(string port, string ip, vector<string> args, string uid, string pass){ //TODO
+void bid_process(string port, string ip, vector<string> args, string uid, string pass){ 
+  /**
+   * @brief This function handles the bid process, validates the aid and bid
+   *  and if they are valid sends the bid command to the server
+   *  @param  port: the port to connect to
+   *  @param  ip: the ip to connect to
+   *  @param  args: the arguments passed to the bid command
+   *  @param  uid: the user id of the logged in user
+   *  @param  pass: the password of the logged in user
+   */
+
   string aid = args[1];
   string bid = args[2];
 
-  // invalid auction id
+  // check if the aid is valid
   if (!valid_aid(aid)){
     cout << "ERROR: INVALID AID\n";
     return;
   }
 
-  // invalid bid
+  // check if the bid is valid
   if (!valid_bid(bid)){
     cout << "ERROR: INVALID BID\n";
     return;
   }
   
-  string received, aux;
+  string received, code, status;
+  // Send the bid command to the server
   received = send_single_message_tcp(port, ip, "BID " + uid + " " + pass + " " + aid + " " + bid +"\n");
   
+  // Parse the response
   istringstream iss(received);
-  iss >> aux;
-  if (aux != "RBD"){
+  iss >> code >> status;
+
+  // Check if the server response is valid
+  if (code != "RBD"){
     cout << "Unexpected server response\n";
     return;
   }
 
-  iss >> aux;
-  if (aux == "NOK") cout << "Auction not active\n";
-  else if (aux == "NLG") cout << "No user logged in\n";
-  else if (aux == "ACC") cout << "The bid was accepted\n";
-  else if (aux == "REF") cout << "A larger bid was placed previously\n";
-  else if (aux == "ILG") cout << "Can't bid on your own auction\n";
+  // Print the response
+  if (status == "NOK") cout << "Auction not active\n";
+  else if (status == "NLG") cout << "No user logged in\n";
+  else if (status == "ACC") cout << "The bid was accepted\n";
+  else if (status == "REF") cout << "A larger bid was placed previously\n";
+  else if (status == "ILG") cout << "Can't bid on your own auction\n";
   
 }
 
 void show_record_process(string port, string ip, string aid){
+  /**
+   * @brief This function handles the show record process, validates the aid
+   *  and if it is valid sends the show record command to the server
+   *  @param  port: the port to connect to
+   *  @param  ip: the ip to connect to
+   *  @param  aid: the auction id of the auction to show the record
+   */
+
   //Check if the auction ID is valid
   if (!valid_aid(aid)){
-    cout << "ERROR: INVALID AID\n";
+    cout << "Invalid aid\n";
     return;
   }
-  //Declare variables
+
   string host_UID, auction_name, asset_fname, start_value, start_date, start_time, timeactive;
   string bidder_UID, bid_value, bid_date, bid_time, bid_sec_time;
   string end_date, end_time, end_sec_time;
-  string aux,received = send_message_udp(port, ip, "SRC " + aid + "\n");
-  istringstream iss(received);
+  string code,status,received = send_message_udp(port, ip, "SRC " + aid + "\n");
 
-  //Check if the auction was found
-  if(received == "RRC NOK\n")
+  // Parse the first part of the response
+  istringstream iss(received);
+  iss >> code >> status;
+
+  // Check if the server response is valid
+  if(code != "RRC"){
+    cout << "Unexpected server response\n";
+    return;
+  }
+
+  // Print the response in case of error
+  if(status == "NOK\n")
     cout << "There was an error displaying the record\n";
 
-  //Display the auction information
+  // Display the auction information
   else {
-    cout << received;
 
-    //Get the information from the server
-    iss >> aux >> aux;      //Skip the code and status
+    // Parse the auction information
     iss >> host_UID >> auction_name >> asset_fname >> start_value >> start_date >> start_time >> timeactive;
 
-    //Display the auction information
+    // Display the auction information
     cout << "Auction "+auction_name+" hosted by user "+host_UID+"\n"
            "File name: "+asset_fname+"\n"
            "Starting value: "+start_value+"\n"
            "Starting time "+start_date+" "+start_time+"\n"
            "Auction duration: "+timeactive+"\n";
 
-    //Display the bid history
+    // Display the bid history
     cout << "---------------------------------------------------\n"
             "                   BID HISTORY                     \n"
             "---------------------------------------------------\n";
 
     //Go through the information and display the bids and the end of the auction
-    while(iss >> aux){
-      if (aux == "B"){
+    while(iss >> code){
+      if (code == "B"){
         iss >> bidder_UID >> bid_value >> bid_date >> bid_time >> bid_sec_time;
 
         cout << bid_date+" "+bid_time+" : User "+bidder_UID+" bid "+bid_value+" credits \n"+
                 "                      Time since start: "+bid_sec_time+" seconds\n"
                 "---------------------------------------------------\n";
       }
-      else if (aux == "E"){
+      else if (code == "E"){
         
         iss >> end_date >> end_time >> end_sec_time;
         cout << "Auction ended at "+end_date+" "+end_time+"\n"
