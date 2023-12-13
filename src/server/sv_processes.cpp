@@ -57,7 +57,7 @@ int sv_unregister_process(string uid, string pass, string port, string ip){
         msg = "RUR OK\n";
         eraseUser(uid);
     }
-    send_message_udp(port, ip, msg, USER_MODE);
+    send_message_udp(port, ip, msg, SERVER_MODE);
     //cout << msg+"\n"; //for testing
     return 0;
 }
@@ -77,7 +77,7 @@ int sv_myauctions_process(string uid, string port, string ip){
         }
     }
     msg += "\n";
-    send_message_udp(port, ip, msg, USER_MODE);
+    send_message_udp(port, ip, msg, SERVER_MODE);
     //cout << msg+"\n"; //for testing
     return 0;
 }
@@ -106,7 +106,7 @@ int sv_mybids_process(string uid, string port, string ip){
         }
     }
     msg += "\n";
-    send_message_udp(port, ip, msg, USER_MODE);
+    send_message_udp(port, ip, msg, SERVER_MODE);
     //cout << msg+"\n"; //for testing
     return 0;
 }
@@ -124,13 +124,13 @@ int sv_list_process(string port, string ip){
         }
     }
     msg += "\n";
-    send_message_udp(port,ip,msg, USER_MODE);
+    send_message_udp(port,ip,msg, SERVER_MODE);
     //cout << msg+"\n"; //for testing
     return 0;
     }
 
 int sv_show_record_process(string aid, string port, string ip){
-    string msg, host_UID, name, asset_fname, start_value, start_datetime, timeactive;
+    string msg, host_UID, name, asset_fname, start_value, timeactive, date, time;
     vector<string> bids_list;
     if (!valid_aid(aid)) msg = "ERR";
     else if (!exists(aid)) msg = "RRC NOK";
@@ -138,8 +138,8 @@ int sv_show_record_process(string aid, string port, string ip){
         msg = "RRC OK";
         string filename = "AUCTIONS/"+aid+"/START_"+aid+".txt";
         ifstream ifs(filename, ifstream::in);
-        ifs >> host_UID >> name >> asset_fname >> start_value >> timeactive >> start_datetime;
-        msg += " " + host_UID + " " + name + " " + asset_fname + " " + start_value + " " + start_datetime + " " + timeactive;
+        ifs >> host_UID >> name >> asset_fname >> start_value >> timeactive >> date >> time;
+        msg += " " + host_UID + " " + name + " " + asset_fname + " " + start_value + " " + date + " " + time + " " + timeactive;
        
         bids_list = get_auction_bids(aid);
 
@@ -160,7 +160,7 @@ int sv_show_record_process(string aid, string port, string ip){
         }
     }
     msg += "\n";
-    send_message_udp(port, ip, msg, USER_MODE);
+    send_message_udp(port, ip, msg, SERVER_MODE);
     //cout << msg+"\n"; //for testing
     return 0;
 }

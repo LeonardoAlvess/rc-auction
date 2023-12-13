@@ -52,8 +52,8 @@ int ended(string aid){
     filename = "AUCTIONS/"+aid+"/START_"+aid+".txt";
     ifstream ifs(&filename[0], ifstream::in);
     for (int i=0; i<4; i++) ifs >> trash;
-    ifs >> timeactive >> trash >> starttime;
-    if(stoi(get_current_time()) < stoi(starttime)+stoi(timeactive)) return 1;
+    ifs >> timeactive >> trash >> trash >> starttime;
+    if( time(NULL) >= stoi(starttime)+stoi(timeactive)) return 1;
     else return 0;
 
     

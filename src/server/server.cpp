@@ -106,6 +106,13 @@ int main(int argc, char *argv[]){ //adicionar args e processar
     //    printf("Size of fd_set: %d\n",sizeof(fd_set));
     //    printf("Value of FD_SETSIZE: %d\n",FD_SETSIZE);
 
+    sv_login_process("190256","password","50000","localhost");
+    sv_open_process("190256 password mauracio 100 1000 preacher.png 324000","50000","localhost");
+    sv_unregister_process("190256","password","50000","localhost");
+    sv_login_process("290256","password","50000","localhost");
+    sv_bid_process("290256","password","001","300","50000","localhost");
+    sv_unregister_process("290256","password","50000","localhost");
+
     while(1)
     {
         testfds=inputs; // Reload mask
@@ -150,13 +157,44 @@ int main(int argc, char *argv[]){ //adicionar args e processar
                     while(iss >> token){      
                         args.push_back(token);  //reading from line stream and filling argument vector
                     }
-                    //maybe put switch and verify N args
-                    if (args[0]=="LIN"){
-                      sv_login_process(args[1],args[2], port, ip);
+                    //verify N args
+                    int code = getProtocolType(args[0]);
+
+                    switch (code)
+                    {
+                    case LOGIN:
+                        sv_login_process(args[1], args[2], port, ip);
+                        break;
+                    
+                    case LOGOUT:
+                        sv_logout_process(args[1], args[2], port, ip);
+                        break;
+                    
+                    case UNREGISTER:
+                        sv_unregister_process(args[1], args[2], port, ip);
+                        break;
+                    
+                    case MY_AUCTIONS:
+                        sv_myauctions_process(args[1], port, ip);
+                        break;
+                    
+                    case MY_BIDS:
+                        sv_mybids_process(args[1], port, ip);
+                        break;
+                    
+                    case LIST:
+                        sv_list_process(port, ip);
+                        break;
+                    
+                    case SHOW_RECORD:
+                        sv_show_record_process(args[1], port, ip);
+                        break;
+                    
+                    default:
+                        send_message_udp(port, ip, "ERR\n", SERVER_MODE);
+                        break;
                     }
-                    else if (args[0]=="LOU"){
-                      sv_logout_process(args[1],args[2], port, ip);
-                    }
+                    
                 }
                 if(FD_ISSET(tfd,&testfds))
                 {
