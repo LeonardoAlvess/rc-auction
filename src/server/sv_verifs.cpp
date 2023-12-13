@@ -62,9 +62,9 @@ int ended(string aid){
 string validateBid(string aid, string uid, string bid){
     if(!valid_aid(aid) || !valid_uid(uid)|| !valid_bid(bid)) return "ERR";
 
-    if (!ended(aid)) return "NOK";
+    if (ended(aid)) return "NOK";
 
-    if (is_logged(uid)) return "NLG";
+    if (!is_logged(uid)) return "NLG";
 
     string start_fname = "AUCTIONS/"+aid+"/START_"+aid+".txt";
     ifstream ifs(&start_fname[0], ofstream::in);

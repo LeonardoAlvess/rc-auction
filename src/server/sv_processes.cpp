@@ -12,7 +12,9 @@ using namespace std;
 
 int sv_login_process(string uid, string pass, string port, string ip){
     string msg, saved_pass;
-    if (is_registered(uid)){
+
+    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR";
+    else if (is_registered(uid)){
         string pass_name = "USERS/"+uid+"/"+uid+"_pass.txt";
         ifstream ifs(&pass_name[0],ifstream::in);
         ifs >> saved_pass;
@@ -34,7 +36,8 @@ int sv_login_process(string uid, string pass, string port, string ip){
 
 int sv_logout_process(string uid, string pass, string port, string ip){
     string msg;
-    if(!is_registered(uid)) msg = "RLO UNR";
+    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR";
+    else if(!is_registered(uid)) msg = "RLO UNR";
     else if(!is_logged(uid)) msg = "RLO NOK";
     else {
         msg = "RLO OK";
@@ -48,7 +51,8 @@ int sv_logout_process(string uid, string pass, string port, string ip){
 
 int sv_unregister_process(string uid, string pass, string port, string ip){
     string msg;
-    if(!is_registered(uid)) msg = "RUR UNR";
+    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR";
+    else if(!is_registered(uid)) msg = "RUR UNR";
     else if(!is_logged(uid)) msg = "RUR NOK";
     else {
         msg = "RUR OK";
@@ -61,11 +65,13 @@ int sv_unregister_process(string uid, string pass, string port, string ip){
 }
 
 int sv_myauctions_process(string uid, string port, string ip){
-    string msg = "RMA", state;
+    string msg, state;
     vector<string> aid_list;
-    if (!is_logged(uid)) msg+= " NLG";
-    else if ((aid_list = get_hosted(uid)).size() == 0) msg += " NOK";
+    if (!valid_uid(uid)) msg = "ERR";
+    else if (!is_logged(uid)) msg = "RMA NLG";
+    else if ((aid_list = get_hosted(uid)).size() == 0) msg = "RMA NOK";
     else{
+        msg = "RMA OK";
         for(vector<string>::iterator it=aid_list.begin(); it != aid_list.end(); ++it){
             if(!ended(*it)) state = "1";
             else state = "0";
@@ -78,12 +84,14 @@ int sv_myauctions_process(string uid, string port, string ip){
 }
 
 int sv_mybids_process(string uid, string port, string ip){
-    string msg = "RMB", state;
+    string msg , state;
     vector<string> aid_list, empty, used;
     bool dupe;
-    if (!is_logged(uid)) msg += " NLG";
-    else if((aid_list = get_bidded(uid)).size() == 0) msg += " NOK";
+    if (!valid_uid(uid)) msg = "ERR";
+    else if (!is_logged(uid)) msg = "RMB NLG";
+    else if((aid_list = get_bidded(uid)).size() == 0) msg = "RMB NOK";
     else{
+        msg = "RMB OK";
         for(vector<string>::iterator it=aid_list.begin(); it != aid_list.end(); ++it){
             dupe = false;
             for (vector<string>::iterator us=used.begin(); us != used.end(); ++us){
@@ -104,11 +112,11 @@ int sv_mybids_process(string uid, string port, string ip){
 }
 
 int sv_list_process(string port, string ip){
-    string msg = "RLS", state;
+    string msg , state;
     vector<string> aid_list = get_all_auctions();
-    if (aid_list.size() == 0) msg += " NOK";
+    if (aid_list.size() == 0) msg = "RLS NOK";
     else {
-        msg += " OK";
+        msg = "RLS OK";
         for(vector<string>::iterator it=aid_list.begin(); it != aid_list.end(); ++it){
             if(!ended(*it)) state = "1";
             else state = "0";
@@ -121,11 +129,12 @@ int sv_list_process(string port, string ip){
     }
 
 int sv_show_record_process(string aid, string port, string ip){
-    string msg = "RRC", host_UID, name, asset_fname, start_value, start_datetime, timeactive;
+    string msg, host_UID, name, asset_fname, start_value, start_datetime, timeactive;
     vector<string> bids_list;
-    if (!exists(aid)) msg += " NOK";
+    if (!valid_aid(aid)) msg = "ERR";
+    else if (!exists(aid)) msg = "RRC NOK";
     else{
-        msg += " OK";
+        msg = "RRC OK";
         string filename = "AUCTIONS/"+aid+"/START_"+aid+".txt";
         ifstream ifs(filename, ifstream::in);
         ifs >> host_UID >> name >> asset_fname >> start_value >> timeactive >> start_datetime;
@@ -155,22 +164,25 @@ int sv_show_record_process(string aid, string port, string ip){
     return 0;
 }
 
-int sv_open_process(string uid,string input, string port, string ip){
-    string msg = "ROA", aid, name, start_value, timeactive, asset_fname, info;
+//input is everything excluding fsize and data (might change to auction info obj)
+int sv_open_process(string input, string port, string ip){
+    string msg, aid, uid, pass, name, start_value, timeactive, asset_fname, info;
     istringstream iss(input);
-    if (!is_logged(uid)) msg += " NLG";
+    iss >> uid >> pass >> name >> start_value >> timeactive >> asset_fname;
+
+    if (!valid_uid(uid) || !valid_password(pass) || !valid_auction_name(name) || !valid_start_value(start_value) || !valid_duration(timeactive)) msg = "ERR";
+    else if (!is_logged(uid)) msg = "ROA NLG";
     else{
         aid = get_unique_aid();
 
-        iss >> name >> start_value >> timeactive >> asset_fname;
         info = uid+" "+name+" "+asset_fname+" "+start_value+" "+timeactive+ " " + get_current_time();
 
-        if (aid == "1000" || createAuction(aid, info) == -1) msg += " NOK";
+        if (aid == "1000" || createAuction(aid, info) == -1) msg = "ROA NOK";
         else {
             hostAuction(aid, uid);
-            char txt[8] = "mememan";
+            char txt[8] = "mememan";        //TO CHANGE
             loadAsset(aid, asset_fname, txt);
-            msg += " OK "+aid;
+            msg = "ROA OK "+aid;
         }
     }
     //send_single_message_tcp(port, ip, msg);
@@ -180,6 +192,7 @@ int sv_open_process(string uid,string input, string port, string ip){
 
 int sv_close_process(string uid, string pass, string aid, string port, string ip){
     string msg, end_info;
+    if (!valid_uid(uid) || !valid_password(pass) || !valid_aid(aid)) msg = "ERR";
     if (!is_logged(uid)) msg = "RCL NLG";
     else if (!exists(aid)) msg = "RCL EAU";
     else if (!is_owner(uid,aid)) msg = "RCL EOW";    
@@ -198,6 +211,7 @@ int sv_bid_process(string uid, string pass, string aid, string bid, string port,
     string bid_datetime, bid_sec_time, bid_info;
     string status = validateBid(aid, uid, bid);
     string msg = "RBD " + status;
+    if (status == "ERR") msg = "ERR";
     if (status == "ACC"){
         
         bid_info = uid+" "+bid+" "+get_bid_time(aid);
