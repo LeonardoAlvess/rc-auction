@@ -15,7 +15,12 @@
 using namespace std;        
 using namespace std::filesystem;       
 
+// create docstrings for each function
+
 int getCommandType(const string& command) {
+    /*
+    *   Returns the command code for the given command string
+    */
     if (command == "login") {
         return LOGIN;
     } else if (command == "logout") {
@@ -45,7 +50,7 @@ int getCommandType(const string& command) {
     }
 }
 
-bool valid_N_args(int code, int n_args){                                                                           
+bool valid_N_args(int code, int n_args){
   int good_n_ars[13] = {3,1,1,1,5,2,1,1,1,2,3,2,0};
   if (code == 12) return true;
   else return good_n_ars[code]==n_args;
@@ -53,23 +58,32 @@ bool valid_N_args(int code, int n_args){
 
 bool valid_uid(string uid) {return uid.size() == 6 && all_of(uid.begin(), uid.end(), ::isdigit);}
 
+
+
 bool valid_aid(string aid) {return aid.size() == 3 && all_of(aid.begin(), aid.end(), ::isdigit);}
 
 bool valid_password(string pass) { return pass.size() == 8 && all_of(pass.begin(), pass.end(), ::isalnum);}
 
-bool valid_auction_name(string name) { return name.size() <= 10 && all_of(name.begin(), name.end(), ::isalnum);}
+bool valid_auction_name(string name) {
+    if (name.size() > 10) return false;
+
+    for( char c : name){
+        if (c != '_' && c != '-' && !isdigit(c) && !isalnum(c)) return false;
+    }
+    return true;
+}
 
 bool valid_start_value(string value) { return value.size() <= 6 && all_of(value.begin(), value.end(), ::isdigit);}
 
 bool valid_duration(string value) { return value.size() <= 5 && all_of(value.begin(), value.end(), ::isdigit);}
 
 bool valid_filename(string filename){
-  if (filename.size() > 24) return false;
+    if (filename.size() > 24) return false;
 
-  for( char c : filename){
-    if (c != '_' && c != '-' && c != '.' && !isdigit(c) && !isalnum(c)) return false;
-  }
-  return true;
+    for( char c : filename){
+        if (c != '_' && c != '-' && c != '.' && !isdigit(c) && !isalnum(c)) return false;
+    }
+    return true;
 }
 
 bool valid_filesize(string filesize){ return filesize.size() <= 8;}
