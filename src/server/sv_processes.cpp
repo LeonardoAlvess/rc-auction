@@ -13,55 +13,52 @@ using namespace std;
 int sv_login_process(string uid, string pass, string port, string ip){
     string msg, saved_pass;
 
-    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR";
+    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR\n";
     else if (is_registered(uid)){
         string pass_name = "USERS/"+uid+"/"+uid+"_pass.txt";
         ifstream ifs(&pass_name[0],ifstream::in);
         ifs >> saved_pass;
-        if (saved_pass != pass) msg = "RLI NOK";
+        if (saved_pass != pass) msg = "RLI NOK\n";
         else {
-            msg = "RLI OK";
+            msg = "RLI OK\n";
             createLogin(uid);
         }
     }
     else{
-        msg = "RLI REG";
+        msg = "RLI REG\n";
         createUser(uid, pass);
         createLogin(uid);
     }
-    msg+="\n";
     send_message_udp(port,ip,msg, SERVER_MODE);
-    //cout << msg; for testing
+    //cout << msg; //for testing
     return 0;
 }
 
 int sv_logout_process(string uid, string pass, string port, string ip){
     string msg;
-    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR";
-    else if(!is_registered(uid)) msg = "RLO UNR";
-    else if(!is_logged(uid)) msg = "RLO NOK";
+    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR\n";
+    else if(!is_registered(uid)) msg = "RLO UNR\n";
+    else if(!is_logged(uid)) msg = "RLO NOK\n";
     else {
-        msg = "RLO OK";
+        msg = "RLO OK\n";
         eraseLogin(uid);
     }
-    msg += "\n";
     send_message_udp(port, ip, msg, SERVER_MODE);
-    //cout << msg+"\n"; for testing
+    //cout << msg+"\n"; //for testing
     return 0;
 }
 
 int sv_unregister_process(string uid, string pass, string port, string ip){
     string msg;
-    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR";
-    else if(!is_registered(uid)) msg = "RUR UNR";
-    else if(!is_logged(uid)) msg = "RUR NOK";
+    if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR\n";
+    else if(!is_registered(uid)) msg = "RUR UNR\n";
+    else if(!is_logged(uid)) msg = "RUR NOK\n";
     else {
-        msg = "RUR OK";
+        msg = "RUR OK\n";
         eraseUser(uid);
     }
-
-    //send_message_udp(port, ip, msg, USER_MODE);
-    cout << msg+"\n"; //for testing
+    send_message_udp(port, ip, msg, USER_MODE);
+    //cout << msg+"\n"; //for testing
     return 0;
 }
 
@@ -79,8 +76,9 @@ int sv_myauctions_process(string uid, string port, string ip){
             msg += " "+ *it + " " + state;
         }
     }
-    //send_message_udp(port, ip, msg, USER_MODE);
-    cout << msg+"\n";
+    msg += "\n";
+    send_message_udp(port, ip, msg, USER_MODE);
+    //cout << msg+"\n"; //for testing
     return 0;
 }
 
@@ -107,8 +105,9 @@ int sv_mybids_process(string uid, string port, string ip){
             msg += " "+ *it + " " + state;
         }
     }
-    //send_message_udp(port, ip, msg, USER_MODE);
-    cout << msg+"\n";
+    msg += "\n";
+    send_message_udp(port, ip, msg, USER_MODE);
+    //cout << msg+"\n"; //for testing
     return 0;
 }
 
@@ -124,8 +123,9 @@ int sv_list_process(string port, string ip){
             msg += " "+ *it + " " + state;
         }
     }
-    //send_message_udp(port,ip,msg, USER_MODE);
-    cout << msg+"\n";
+    msg += "\n";
+    send_message_udp(port,ip,msg, USER_MODE);
+    //cout << msg+"\n"; //for testing
     return 0;
     }
 
@@ -159,9 +159,9 @@ int sv_show_record_process(string aid, string port, string ip){
             msg += " E " + end_info;
         }
     }
-
-    //send_message_udp(port, ip, msg, USER_MODE);
-    cout << msg+"\n";
+    msg += "\n";
+    send_message_udp(port, ip, msg, USER_MODE);
+    //cout << msg+"\n"; //for testing
     return 0;
 }
 
