@@ -26,8 +26,9 @@ enum CALL_MODE {
     SERVER_MODE
 };
 
-
 int getCommandType(const string& command);
+
+int getProtocolType(string protocol);
 
 bool valid_N_args(int code, int n_args);
 

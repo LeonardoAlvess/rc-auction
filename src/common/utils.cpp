@@ -51,6 +51,34 @@ int getCommandType(const string& command) {
     }
 }
 
+int getProtocolType(string protocol){
+    if (protocol == "LIN") {
+        return LOGIN;
+    } else if (protocol == "LOU") {
+        return LOGOUT;
+    } else if (protocol == "UNR") {
+        return UNREGISTER;
+    } else if (protocol == "OPA") {
+        return OPEN_AUCTION;
+    } else if (protocol == "CLS") {
+        return CLOSE_AUCTION;
+    } else if (protocol == "LMA") {
+        return MY_AUCTIONS;
+    } else if (protocol == "LMB") {
+        return MY_BIDS;
+    } else if (protocol == "LST") {
+        return LIST;
+    } else if (protocol == "SAS") {
+        return SHOW_ASSET;
+    } else if (protocol == "BID") {
+        return BID;
+    } else if (protocol == "SRC") {
+        return SHOW_RECORD;                          
+    } else {
+        return UNKNOWN_COMMAND;
+    }
+}
+
 bool valid_N_args(int code, int n_args){
     /**
      * @brief Returns true if the number of arguments is valid for the command type
