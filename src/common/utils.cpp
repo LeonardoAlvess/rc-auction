@@ -52,6 +52,11 @@ int getCommandType(const string& command) {
 }
 
 int getProtocolType(string protocol){
+    /**
+     * @brief Returns the protocol type based on the string passed as argument
+     * @param protocol string to be compared
+     *
+    */ 
     if (protocol == "LIN") {
         return LOGIN;
     } else if (protocol == "LOU") {
@@ -177,7 +182,7 @@ bool valid_filesize(string filesize){ return filesize.size() <= 8;}
  * @return true if bid is valid
  * @return false otherwise
 */
-bool valid_bid(string bid) { return bid.size() <= 5 && all_of(bid.begin(), bid.end(), ::isdigit);}
+bool valid_bid(string bid) {return bid.size() <= 6 && all_of(bid.begin(), bid.end(), ::isdigit);}
 
 
 string send_message_udp(string port, string ip,string message, CALL_MODE mode){

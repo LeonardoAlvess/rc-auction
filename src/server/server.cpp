@@ -30,26 +30,22 @@ int main(int argc, char *argv[]){ //adicionar args e processar
       port = argv[i];
     }
     else if (!strcmp(argv[i],"-v")){
-      verbose = true; 
+      if(verbose == false)
+        verbose = true; 
     }
   }
-  
-      
-    char in_str[128];
-
+    
     fd_set inputs, testfds;
     struct timeval timeout;
-
-    int out_fds,errcode, ret;
-
-    char prt_str[90];
-
+    int out_fds,errcode;
+    ssize_t size;
+    char buffer[BUFFER_SIZE];
 
     // socket variables
     struct addrinfo hints_udp, hints_tcp, *res_udp, *res_tcp;
     struct sockaddr_in udp_useraddr, tcp_useraddr;
     socklen_t addrlen;
-    int ufd, tfd;
+    int ufd, tfd,newfd;
 
     char host[NI_MAXHOST], service[NI_MAXSERV];
 
@@ -60,19 +56,13 @@ int main(int argc, char *argv[]){ //adicionar args e processar
     hints_udp.ai_socktype=SOCK_DGRAM;
     hints_udp.ai_flags=AI_PASSIVE|AI_NUMERICSERV;
 
-    if((errcode=getaddrinfo(NULL,&port[0],&hints_udp,&res_udp))!=0)
+    if((errcode=getaddrinfo(NULL,&port[0],&hints_udp,&res_udp))!= 0)
         exit(1);// On error
 
-    ufd=socket(res_udp->ai_family,res_udp->ai_socktype,res_udp->ai_protocol);
-    if(ufd==-1)
-        exit(1);
+    if ((ufd=socket(res_udp->ai_family,res_udp->ai_socktype,res_udp->ai_protocol)) == -1) exit(1);
 
-    if(bind(ufd,res_udp->ai_addr,res_udp->ai_addrlen)==-1)
-    {
-        sprintf(prt_str,"Bind error UDP server\n");
-        write(1,prt_str,strlen(prt_str));
-        exit(1);// On error
-    }
+    if(bind(ufd,res_udp->ai_addr,res_udp->ai_addrlen)==-1) exit(1);// On error
+
     if(res_udp!=NULL)
         freeaddrinfo(res_udp);
 
@@ -89,29 +79,19 @@ int main(int argc, char *argv[]){ //adicionar args e processar
     if(tfd==-1)
         exit(1);
 
-    if(bind(tfd,res_tcp->ai_addr,res_tcp->ai_addrlen)==-1)
-    {
-        sprintf(prt_str,"Bind error tcp server\n");
-        write(1,prt_str,strlen(prt_str));
-        exit(1);// On error
-    }
+    if(bind(tfd,res_tcp->ai_addr,res_tcp->ai_addrlen)==-1) exit(1);// On error
+
     if(res_tcp!=NULL)
         freeaddrinfo(res_tcp);  
+    
+    if(listen(tfd,5)==-1)/*error*/exit(1);
       
     FD_ZERO(&inputs); // Clear input mask
-    FD_SET(0,&inputs); // Set standard input channel on
     FD_SET(ufd,&inputs); // Set UDP channel on
     FD_SET(tfd,&inputs); // Set TCP channel on
 
     //    printf("Size of fd_set: %d\n",sizeof(fd_set));
     //    printf("Value of FD_SETSIZE: %d\n",FD_SETSIZE);
-
-    sv_login_process("190256","password","50000","localhost");
-    sv_open_process("190256 password mauracio 100 1000 preacher.png 324000","50000","localhost");
-    sv_unregister_process("190256","password","50000","localhost");
-    sv_login_process("290256","password","50000","localhost");
-    sv_bid_process("290256","password","001","300","50000","localhost");
-    sv_unregister_process("290256","password","50000","localhost");
 
     while(1)
     {
@@ -132,35 +112,46 @@ int main(int argc, char *argv[]){ //adicionar args e processar
                 perror("select");
                 exit(1);
             default:
-                if(FD_ISSET(0,&testfds))
-                {
-                    fgets(in_str,50,stdin);
-                    printf("---Input at keyboard: %s\n",in_str);
-                }
                 if(FD_ISSET(ufd,&testfds))
                 {
                     addrlen = sizeof(udp_useraddr);
-                    ret=recvfrom(ufd,prt_str,80,0,(struct sockaddr *)&udp_useraddr,&addrlen);
-                    if(ret>=0)
+                    size=recvfrom(ufd,buffer,BUFFER_SIZE,0,(struct sockaddr *)&udp_useraddr,&addrlen);
+                    if(size>=0)
                     {
-                        if(strlen(prt_str)>0)
-                            prt_str[ret-1]=0;
-                        printf("---UDP socket: %s\n",prt_str);
+                        if(strlen(buffer)>0)
+                            buffer[size-1]= '\0';
+                        printf("---UDP socket: %s\n",buffer);
                         errcode=getnameinfo( (struct sockaddr *) &udp_useraddr,addrlen,host,sizeof host, service,sizeof service,0);
                         if(errcode==0)
                             printf("       Sent by [%s:%s]\n",host,service);
 
                     }
-                    string token, ip = host, port = service;
-                    vector<string> args;      
-                    istringstream iss(prt_str);
-                    while(iss >> token){      
-                        args.push_back(token);  //reading from line stream and filling argument vector
-                    }
-                    //verify N args
-                    int code = getProtocolType(args[0]);
+                }
+                //TCP
+                if(FD_ISSET(tfd,&testfds))
+                {
+                    addrlen=sizeof(tcp_useraddr);
+                    if((newfd=accept(tfd,(struct sockaddr*)&tcp_useraddr,&addrlen))==-1) /*error*/ exit(1);
+                    if((size=read(newfd,buffer,BUFFER_SIZE) == -1))/*error*/exit(1);
+                    {
+                        if(strlen(buffer)>0 && size != BUFFER_SIZE)
+                            buffer[size-1]= '\0';
+                        printf("---TCP socket: %s\n",buffer);
+                        errcode=getnameinfo( (struct sockaddr *) &tcp_useraddr,addrlen,host,sizeof host, service,sizeof service,0);
+                        if(errcode==0)
+                            printf("       Sent by [%s:%s]\n",host,service);
 
-                    switch (code)
+                    }
+                }
+                string token, ip = host, port = service;
+                vector<string> args;      
+                istringstream iss(buffer);
+                while(iss >> token){      
+                    args.push_back(token);  //reading from line stream and filling argument vector
+                }
+                //verify N args
+                int code = getProtocolType(args[0]);
+                switch (code)
                     {
                     case LOGIN:
                         sv_login_process(args[1], args[2], port, ip);
@@ -189,19 +180,30 @@ int main(int argc, char *argv[]){ //adicionar args e processar
                     case SHOW_RECORD:
                         sv_show_record_process(args[1], port, ip);
                         break;
-                    
+                    case SHOW_ASSET:
+                        //sv_show_asset_process(args[1], port, ip, newfd);
+                        break;
+                    case OPEN_AUCTION:
+                        sv_open_process(buffer, port, ip, newfd);
+                        break;
+                    case CLOSE_AUCTION:
+                        sv_close_process(args[1],args[2],args[3], port, ip, newfd);
+                        break;
+                    case BID:
+                        sv_bid_process(args[1], args[2], args[3],args[4], port, ip, newfd);
+                        break;
                     default:
-                        send_message_udp(port, ip, "ERR\n", SERVER_MODE);
+                        if(FD_ISSET(tfd,&testfds)){
+                            send_message_tcp(newfd, "ERR\n");
+                            close(newfd);
+                        }
+                        else send_message_udp(port, ip, "ERR\n", SERVER_MODE); //adaptar para tcp
                         break;
                     }
-                    
-                }
-                if(FD_ISSET(tfd,&testfds))
-                {
-                    //tcp shit
-                }
+            break;
+                
         }
     }
-  
+    
   return 0;
 }

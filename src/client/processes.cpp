@@ -95,7 +95,7 @@ void logout_process(string port, string ip, string& log_uid, string& log_pass){
   }
   
   //Print the response
-  if(status == "NOK\n"){            
+  if(status == "NOK"){            
     cout << "Logout Failed\n";
     return;
   }
@@ -133,11 +133,11 @@ void unregister_process(string port, string ip, string& log_uid, string& log_pas
   }
 
   //Print the response
-  if(status == "NOK\n"){
+  if(status == "NOK"){
     cout << "Unregistered Failed\n";
     return;
   }
-  cout << "User " + log_uid + "unregistered\n";
+  cout << "User " + log_uid + " unregistered\n";
   
   //Reset the user id and password in the main program
   log_uid = "";
@@ -223,7 +223,7 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
 
   // Receive the response
   received = receive_message_tcp(fd);
-  
+  cout << received;
   // Close the connection
   end_tcp(fd,res);   
   fclose(file);
@@ -284,13 +284,12 @@ void close_auction_process(string port, string ip, vector<string> args, string& 
   }
 
   // Print response
-  if (status == "NOK\n") cout << "There was an error closing the auction\n";
-  else if (status == "NLG\n") cout << "No user logged in\n";
-  else if (status == "EAU\n") cout << "The auction " + aid + " doesn't exist\n";
-  else if (status == "EOW\n") cout << "This auction isnt' owned by " + uid +"\n";
-  else if (status == "END\n") cout << "This auctios has already finished\n";
-  else if (status == "OK\n") cout << "The auction " + aid + " was closed\n";
-  cout << "CLOSED AUCTION "+aid+"\n";
+  if (status == "NOK") cout << "There was an error closing the auction\n";
+  else if (status == "NLG") cout << "No user logged in\n";
+  else if (status == "EAU") cout << "The auction " + aid + " doesn't exist\n";
+  else if (status == "EOW") cout << "This auction isnt' owned by " + uid +"\n";
+  else if (status == "END") cout << "This auction has already finished\n";
+  else if (status == "OK") cout << "The auction " + aid + " was closed\n";
 }
 
 void my_auctions_process(string port, string ip, string uid){
@@ -317,14 +316,11 @@ void my_auctions_process(string port, string ip, string uid){
   }
 
   // Prints the response
-  if(received == "NOK\n") 
+  if(status == "NOK") 
     cout << "The user " + uid + " doesn't have any ongoing auctions\n";
   else{
     string aid,state;                     
-    istringstream iss(received);
     // Parse the rest of the response
-    iss >> aid;
-    iss >> aid;
     while(iss >> aid){
       iss >> state;
       // Transforms the state from 1/0 to Active/Closed
@@ -359,15 +355,12 @@ void my_bids_process(string port, string ip, string uid){
   }
 
   //Prints the response
-  if(status == "NOK\n") 
+  if(status == "NOK") 
     cout << "The user " + uid + " doesn't have any ongoing bids\n";
   else{
     string aid,state;           
-    // If there are bids, parses the rest of the response          
-    istringstream iss(received);
-    iss >> aid;
-    iss >> aid;
 
+    // If there are bids, parses the rest of the response          
     while(iss >> aid){
       iss >> state;
       // Transforms the state from 1/0 to Active/Closed
@@ -400,7 +393,7 @@ void list_process(string port, string ip){
   }
 
   //Prints the response
-  if(status == "NOK\n") {
+  if(status == "NOK") {
     cout << "No auction was yet started\n";
     return;
   }
@@ -609,7 +602,7 @@ void show_record_process(string port, string ip, string aid){
   }
 
   // Print the response in case of error
-  if(status == "NOK\n")
+  if(status == "NOK")
     cout << "There was an error displaying the record\n";
 
   // Display the auction information

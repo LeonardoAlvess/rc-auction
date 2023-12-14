@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <time.h>
 #include <fstream>
+#include <iostream>
 
 using namespace std;
 
@@ -77,6 +78,7 @@ int loadAsset(string aid, string asset_fname, char* asset_buf){
 }
 
 int hostAuction(string aid, string uid){
+    
     string filename = "USERS/"+uid+"/HOSTED/"+aid+".txt";
     FILE* fp = fopen(&filename[0], "w");
     if (fp == NULL) return -1;
@@ -194,13 +196,10 @@ vector<string> get_auction_bids(string aid){
 }
 
 string get_unique_aid(){
-    string aid;
+    char aid[4];
     struct dirent **filelist;
-    int n_entries = scandir("AUCTIONS/",&filelist,0,alphasort);
-    string aux = to_string(n_entries-1);
-    int len = 3-aux.size();
-    while(len--) aid += "0";
-    aid += aux;
+    int n_entries = scandir("AUCTIONS/",&filelist,0,alphasort) - 1;
+    sprintf(aid,"%03d",n_entries);
     return aid;
 }
 
@@ -229,10 +228,9 @@ string get_bid_time(string aid){
     string filename = "AUCTIONS/"+aid+"/START_"+aid+".txt";
     ifstream ifs(filename, ifstream::in);
 
-    for(int i=0; i<6; i++) ifs >> aux;
+    for(int i=0; i<7; i++) ifs >> aux;
 
     ifs >> start_time;
-
     ret += " "+to_string(t-start_time);
 
     return ret;

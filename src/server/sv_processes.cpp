@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <unistd.h>
 
 
 using namespace std;
@@ -166,32 +167,33 @@ int sv_show_record_process(string aid, string port, string ip){
 }
 
 //input is everything excluding fsize and data (might change to auction info obj)
-int sv_open_process(string input, string port, string ip){
-    string msg, aid, uid, pass, name, start_value, timeactive, asset_fname, info;
+int sv_open_process(string input, string port, string ip, int socket_fd){
+    string trash,msg, aid, uid, pass, name, start_value, timeactive, asset_fname, info;
     istringstream iss(input);
-    iss >> uid >> pass >> name >> start_value >> timeactive >> asset_fname;
-
+    iss >> trash >> uid >> pass >> name >> start_value >> timeactive >> asset_fname;
     if (!valid_uid(uid) || !valid_password(pass) || !valid_auction_name(name) || !valid_start_value(start_value) || !valid_duration(timeactive)) msg = "ERR";
     else if (!is_logged(uid)) msg = "ROA NLG";
     else{
         aid = get_unique_aid();
 
         info = uid+" "+name+" "+asset_fname+" "+start_value+" "+timeactive+ " " + get_current_time();
-
         if (aid == "1000" || createAuction(aid, info) == -1) msg = "ROA NOK";
         else {
-            hostAuction(aid, uid);
-            char txt[8] = "mememan";        //TO CHANGE
+            hostAuction(aid, uid);          //verificar password    
+            char txt[8] = "mememan";        //TO CHANGE INTO READ LOOP FOR FILE
             loadAsset(aid, asset_fname, txt);
             msg = "ROA OK "+aid;
         }
     }
-    //send_single_message_tcp(port, ip, msg);
-    cout << msg + "\n";
+    cout << msg;
+    msg += "\n";
+    send_message_tcp(socket_fd, msg);
+    close(socket_fd);
+    //cout << msg;
     return 0;
 }
 
-int sv_close_process(string uid, string pass, string aid, string port, string ip){
+int sv_close_process(string uid, string pass, string aid, string port, string ip, int socket_fd){
     string msg, end_info;
     if (!valid_uid(uid) || !valid_password(pass) || !valid_aid(aid)) msg = "ERR";
     if (!is_logged(uid)) msg = "RCL NLG";
@@ -203,12 +205,14 @@ int sv_close_process(string uid, string pass, string aid, string port, string ip
         end_info = get_current_time();
         endAuction(aid, end_info);
     }
-    //send_single_message_tcp(port, ip, msg);
-    cout << msg+"\n";
+    msg += "\n";
+    send_message_tcp(socket_fd, msg);
+    close(socket_fd);
+    //cout << msg;
     return 0;
 }
 
-int sv_bid_process(string uid, string pass, string aid, string bid, string port, string ip){
+int sv_bid_process(string uid, string pass, string aid, string bid, string port, string ip, int socket_fd){
     string bid_datetime, bid_sec_time, bid_info;
     string status = validateBid(aid, uid, bid);
     string msg = "RBD " + status;
@@ -218,7 +222,9 @@ int sv_bid_process(string uid, string pass, string aid, string bid, string port,
         bid_info = uid+" "+bid+" "+get_bid_time(aid);
         makeBid(aid, uid, bid, bid_info);
     }
-    //send_single_message_tcp(port,ip,msg);
-    cout << msg+"\n";
+    msg += "\n";
+    send_message_tcp(socket_fd, msg);
+    close(socket_fd);
+    //cout << msg;
     return 0;
 }

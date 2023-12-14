@@ -16,9 +16,9 @@ int sv_list_process(string port, string ip);
 
 int sv_show_record_process(string aid, string port, string ip);
 
-int sv_open_process(string input, string port, string ip);
+int sv_open_process(string input, string port, string ip, int socket_fd);
 
-int sv_close_process(string uid, string pass, string aid, string port, string ip);
+int sv_close_process(string uid, string pass, string aid, string port, string ip, int socket_fd);
 
-int sv_bid_process(string uid, string pass, string aid, string bid, string port, string ip);
+int sv_bid_process(string uid, string pass, string aid, string bid, string port, string ip, int socket_fd);
 
