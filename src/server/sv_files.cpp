@@ -69,10 +69,10 @@ int createAuction(string aid, string start_info){
     return 0;
 }
 
-int loadAsset(string aid, string asset_fname, char* asset_buf){
+int loadAsset(string aid, string asset_fname, char* asset_buf, int asset_size){
     string filename = "AUCTIONS/"+aid+"/"+asset_fname;
     FILE* fp = fopen(&filename[0],"ab");
-    fwrite(asset_buf, sizeof(char), strlen(asset_buf),fp);
+    fwrite(asset_buf, sizeof(char), asset_size,fp);
     fclose(fp);
     return 0;
 }
@@ -120,7 +120,10 @@ int eraseUser(string uid){
 }
 
 int makeBid(string aid, string uid, string bid, string bid_info){
-    string filename = "AUCTIONS/"+aid+"/BIDS/"+bid+".txt";
+    char new_bid[7];
+    int number = atoi(bid.c_str());
+    sprintf(new_bid,"%06d",number);
+    string filename = "AUCTIONS/"+aid+"/BIDS/"+ new_bid + ".txt";
     FILE *fp = fopen(&filename[0], "w");    
     if (fp==NULL) return -1;
     fwrite(&bid_info[0],sizeof(char),bid_info.length(),fp);
@@ -215,7 +218,7 @@ string get_current_time(){  //returns: (YYYY-MM-DD hh:mm:ss fulltime)
     return ret;
 }
 
-string get_bid_time(string aid){
+string get_elapsed_time(string aid){
     string ret, aux;
     int start_time;
     char buf[25];
@@ -232,6 +235,22 @@ string get_bid_time(string aid){
 
     ifs >> start_time;
     ret += " "+to_string(t-start_time);
+    return ret;
+}
 
+string get_ended_time(string aid){
+    string aux, timeactive, start_time, ret;
+    string filename = "AUCTIONS/"+aid+"/START_"+aid+".txt";
+    ifstream ifs(filename, ifstream::in);
+
+    for(int i=0; i<4; i++) ifs >> aux;
+    ifs >> timeactive >> aux >> aux >> start_time;
+    time_t end_time = stoi(start_time)+stoi(timeactive);
+    struct tm *tt;
+    tt = gmtime(&end_time);
+    char buf[25];
+    strftime(buf,25,"%Y-%m-%d %X",tt);
+    ret = buf;
+    ret += " "+timeactive;
     return ret;
 }

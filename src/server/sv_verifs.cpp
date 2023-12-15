@@ -21,6 +21,13 @@ int is_logged(string uid){
     else return 1;
 }
 
+int authenticated(string uid, string pass){
+    string saved_pass, pass_name = "USERS/"+uid+"/"+uid+"_pass.txt";
+    ifstream ifs(&pass_name[0],ifstream::in);
+    ifs >> saved_pass;
+    return saved_pass == pass;
+}
+
 int is_owner(string uid, string aid){
     string host_dirname = "USERS/"+uid+"/HOSTED/";
     string aid_fname = aid+".txt";
@@ -53,16 +60,21 @@ int ended(string aid){
     ifstream ifs(&filename[0], ifstream::in);
     for (int i=0; i<4; i++) ifs >> trash;
     ifs >> timeactive >> trash >> trash >> starttime;
-    if( time(NULL) >= stoi(starttime)+stoi(timeactive)) return 1;
+
+    if(time(NULL) >= stoi(starttime)+stoi(timeactive)){
+        string end_info = get_ended_time(aid);
+        endAuction(aid, end_info);
+        return 1;
+    }
     else return 0;
 
     
 }
 
-string validateBid(string aid, string uid, string bid){
+string validateBid(string aid, string uid, string pass, string bid){
     if(!valid_aid(aid) || !valid_uid(uid)|| !valid_bid(bid)) return "ERR";
 
-    if (ended(aid)) return "NOK";
+    if (!authenticated(uid, pass) || !exists(aid) || ended(aid)) return "NOK";
 
     if (!is_logged(uid)) return "NLG";
 

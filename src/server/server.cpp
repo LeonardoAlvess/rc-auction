@@ -118,8 +118,6 @@ int main(int argc, char *argv[]){ //adicionar args e processar
                     size=recvfrom(ufd,buffer,BUFFER_SIZE,0,(struct sockaddr *)&udp_useraddr,&addrlen);
                     if(size>=0)
                     {
-                        if(strlen(buffer)>0)
-                            buffer[size-1]= '\0';
                         printf("---UDP socket: %s\n",buffer);
                         errcode=getnameinfo( (struct sockaddr *) &udp_useraddr,addrlen,host,sizeof host, service,sizeof service,0);
                         if(errcode==0)
@@ -132,10 +130,12 @@ int main(int argc, char *argv[]){ //adicionar args e processar
                 {
                     addrlen=sizeof(tcp_useraddr);
                     if((newfd=accept(tfd,(struct sockaddr*)&tcp_useraddr,&addrlen))==-1) /*error*/ exit(1);
-                    if((size=read(newfd,buffer,BUFFER_SIZE) == -1))/*error*/exit(1);
+                    memset(buffer,'\0',sizeof(buffer));  
+                    if(((size=read(newfd,buffer,BUFFER_SIZE)) == -1))/*error*/exit(1);
+                    cout << size << endl;
+                    cout << buffer << endl;
+                    if(size>=0)
                     {
-                        if(strlen(buffer)>0 && size != BUFFER_SIZE)
-                            buffer[size-1]= '\0';
                         printf("---TCP socket: %s\n",buffer);
                         errcode=getnameinfo( (struct sockaddr *) &tcp_useraddr,addrlen,host,sizeof host, service,sizeof service,0);
                         if(errcode==0)
@@ -154,43 +154,43 @@ int main(int argc, char *argv[]){ //adicionar args e processar
                 switch (code)
                     {
                     case LOGIN:
-                        sv_login_process(args[1], args[2], port, ip);
+                        sv_login_process(args[1], args[2], port, ip, verbose);
                         break;
                     
                     case LOGOUT:
-                        sv_logout_process(args[1], args[2], port, ip);
+                        sv_logout_process(args[1], args[2], port, ip, verbose);
                         break;
                     
                     case UNREGISTER:
-                        sv_unregister_process(args[1], args[2], port, ip);
+                        sv_unregister_process(args[1], args[2], port, ip, verbose);
                         break;
                     
                     case MY_AUCTIONS:
-                        sv_myauctions_process(args[1], port, ip);
+                        sv_myauctions_process(args[1], port, ip, verbose);
                         break;
                     
                     case MY_BIDS:
-                        sv_mybids_process(args[1], port, ip);
+                        sv_mybids_process(args[1], port, ip, verbose);
                         break;
                     
                     case LIST:
-                        sv_list_process(port, ip);
+                        sv_list_process(port, ip, verbose);
                         break;
                     
                     case SHOW_RECORD:
-                        sv_show_record_process(args[1], port, ip);
+                        sv_show_record_process(args[1], port, ip, verbose);
                         break;
                     case SHOW_ASSET:
-                        //sv_show_asset_process(args[1], port, ip, newfd);
+                        sv_show_asset(buffer,port,ip,newfd,verbose);
                         break;
                     case OPEN_AUCTION:
-                        sv_open_process(buffer, port, ip, newfd);
+                        sv_open_process(buffer, size, port, ip, newfd, verbose);
                         break;
                     case CLOSE_AUCTION:
-                        sv_close_process(args[1],args[2],args[3], port, ip, newfd);
+                        sv_close_process(args[1],args[2],args[3], port, ip, newfd, verbose);
                         break;
                     case BID:
-                        sv_bid_process(args[1], args[2], args[3],args[4], port, ip, newfd);
+                        sv_bid_process(args[1], args[2], args[3],args[4], port, ip, newfd, verbose);
                         break;
                     default:
                         if(FD_ISSET(tfd,&testfds)){

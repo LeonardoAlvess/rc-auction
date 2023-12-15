@@ -7,7 +7,7 @@ int createUser(string uid, string pass);
 
 int createAuction(string aid, string start_info);
 
-int loadAsset(string aid, string asset_fname, char* asset_buf);
+int loadAsset(string aid, string asset_fname, char* asset_buf, int asset_size);
 
 int hostAuction(string aid, string uid);
 
@@ -33,4 +33,6 @@ string get_unique_aid();
 
 string get_current_time();
 
-string get_bid_time(string aid);
+string get_elapsed_time(string aid);
+
+string get_ended_time(string aid);

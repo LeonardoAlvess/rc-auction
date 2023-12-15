@@ -11,7 +11,7 @@
 #include <cstring>
 #include "processes.h"
 
-#define BLANK_SPACE 1
+
 using namespace std;  
 
 void login_process(string port, string ip, vector<string> args, string& log_uid, string& log_pass){
@@ -425,9 +425,9 @@ void show_asset_process(string port, string ip, string aid){
     return;
   }
 
-  string code, status, file_name;
+  string code = "", status = "", file_name = "";
   char received[BUFFER_SIZE];
-  int fd, size, file_size, bytes_read;
+  int fd, size, file_size = 0, bytes_read;
   struct addrinfo *res;
 
   // Create the message to send
@@ -435,51 +435,67 @@ void show_asset_process(string port, string ip, string aid){
 
   // Connection/Send the message to the server
   res = connect_tcp(&fd, port, ip);
-  send_message_tcp(fd, aux.c_str(), aux.size());
+  send_message_tcp(fd, aux.c_str(), aux.size());  
 
-  // Read the first response
-  size = receive_message_tcp(fd, received);
-  
   // Parse the response
-  istringstream iss(received);
-  iss >> code >> status;
-
-  // Check if the server response is valid
-  if (code != "RSA")
-  {
-    cout << "Unexpected server response\n";
-    return;
-  }
-
-  // Print the response
-  if (status == "NOK")
-  {
-    cout << "There was an error displaying the asset\n";
-    return;
-  }
-
-  // Get the code and status message lenght
-  bytes_read = code.size() + status.size() + BLANK_SPACE * 2;
-
-  // In case the first response only contains the code and status
-  if (size == bytes_read)
-  {
-    // Reset the bytes read
+  istringstream iss;
+  while((size = receive_message_tcp(fd, received)) != 0){
+    // Reset bytes_read
     bytes_read = 0;
-
-    // Read the next response
-    size = receive_message_tcp(fd, received);
     
-    // Reset the string stream
+    // Reset the istringstream
     iss.clear();
     iss.str(received);
+    
+    if(code == ""){
+      iss >> code;
+      if (code != "RSA")
+      {
+      cout << "Unexpected server response\n";
+        return;
+      }
+
+      bytes_read += code.size() + BLANK_SPACE;
+    }
+    
+    if(status == ""){
+      iss >> status;
+      // In case the status wasn't yet received
+      if(status == "")
+        // Read again
+        continue;
+      if (status == "NOK")
+      {
+        cout << "There was an error displaying the asset\n";
+        return;
+      }
+
+      bytes_read += status.size() + BLANK_SPACE;  
+    }
+    
+
+    if(file_name == ""){
+      iss >> file_name;
+      // In case the file_name wasn't yet received
+      if(file_name == "")
+        // Read again
+        continue;
+        
+      bytes_read += file_name.size() + BLANK_SPACE;
+    }
+
+    if(file_size == 0){
+      iss >> file_size;
+      // In case the file_size wasn't yet received
+      if(file_size == 0)
+        // Read again
+        continue;
+
+      bytes_read += to_string(file_size).size() + BLANK_SPACE;
+      break;
+    }
+
   }
-
-  // Parse the response
-  iss >> file_name >> file_size;
-
-  // Add the file name and file_size message lenght
-  bytes_read += file_name.size() + to_string(file_size).size() + BLANK_SPACE * 2;
 
   // Store total size of the file data received
   int total = size - bytes_read;
@@ -636,7 +652,6 @@ void show_record_process(string port, string ip, string aid){
                 "---------------------------------------------------\n";
       }
       else if (code == "E"){
-        
         iss >> end_date >> end_time >> end_sec_time;
         cout << "Auction ended at " + end_date + " " + end_time + "\n"
                 +end_sec_time+" seconds since start\n";

@@ -3,7 +3,9 @@ using namespace std;
 
 #define PORT "58011"     
 #define IP "localhost"
+//#define IP "tejo.tecnico.ulisboa.pt"
 #define BUFFER_SIZE 512
+#define BLANK_SPACE 1
 
 enum CommandType {
     LOGIN,
