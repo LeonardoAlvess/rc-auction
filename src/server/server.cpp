@@ -16,7 +16,14 @@
 
 using namespace std;
 
-// call this func right after socket chosen and messaeg received
+/**
+ * @brief prints a verbose message to terminal
+ * @param uid - the user who made a request
+ * @param req - a string representing a type of request
+ * @param ip - ip of the user
+ * @param port - port of the user
+ * @return 0 allways
+*/
 int send_verbose_msg(string uid, string req, string ip, string port)
 {
     string msg = "User " + uid + " made a " + req + " request from " + ip + ":" + port;
@@ -28,18 +35,20 @@ int main(int argc, char *argv[])
 { // adicionar args e processar
     string port = PORT;
     bool verbose = false;
+
+    //argument reading
     for (int i = 1; i < argc; i++)
     {
-        if (!strcmp(argv[i], "-p"))
+        if (strcmp(argv[i], "-p") == 0)
         {
             i++;
             port = argv[i];
+            if (!valid_port(port)){
+                cout << "Error: Invalid port" << endl;
+                return -1;
+            }
         }
-        else if (!strcmp(argv[i], "-v"))
-        {
-            if (verbose == false)
-                verbose = true;
-        }
+        else if (!strcmp(argv[i], "-v")) verbose = true;
     }
 
     fd_set inputs, testfds;
@@ -100,19 +109,16 @@ int main(int argc, char *argv[])
     FD_SET(ufd, &inputs); // Set UDP channel on
     FD_SET(tfd, &inputs); // Set TCP channel on
 
-    //    printf("Size of fd_set: %d\n",sizeof(fd_set));
-    //    printf("Value of FD_SETSIZE: %d\n",FD_SETSIZE);
-
     while (1)
     {
         testfds = inputs; // Reload mask
-                          //        printf("testfds byte: %d\n",((char *)&testfds)[0]); // Debug
+
         memset((void *)&timeout, 0, sizeof(timeout));
         timeout.tv_sec = 10;
 
         out_fds = select(FD_SETSIZE, &testfds, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *)&timeout);
         // testfds is now '1' at the positions that were activated
-        //        printf("testfds byte: %d\n",((char *)&testfds)[0]); // Debug
+
         switch (out_fds)
         {
         case 0:
@@ -122,7 +128,8 @@ int main(int argc, char *argv[])
             perror("select");
             exit(1);
         default:
-            if (FD_ISSET(ufd, &testfds))
+            //UDP Protocol
+            if (FD_ISSET(ufd, &testfds))   
             {
                 addrlen = sizeof(udp_useraddr);
                 size = recvfrom(ufd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&udp_useraddr, &addrlen);
@@ -134,7 +141,7 @@ int main(int argc, char *argv[])
                         printf("       Sent by [%s:%s]\n", host, service);
                 }
             }
-            // TCP
+            //TCP Protocol
             if (FD_ISSET(tfd, &testfds))
             {
                 addrlen = sizeof(tcp_useraddr);
@@ -158,7 +165,6 @@ int main(int argc, char *argv[])
             {
                 args.push_back(token); // reading from line stream and filling argument vector
             }
-            // verify N args
             int code = getProtocolType(args[0]);
             string msg;
             switch (code)
@@ -190,7 +196,7 @@ int main(int argc, char *argv[])
 
             case LIST:
                 send_verbose_msg("Unknown", "LST", ip, port);
-                msg = sv_list_process(port, ip);
+                msg = sv_list_process();
                 break;
 
             case SHOW_RECORD:

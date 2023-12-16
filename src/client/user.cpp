@@ -19,14 +19,18 @@ int main(int argc, char *argv[]){
     //reading ip and port from command line
     for(int i = 1; i < argc; i++){    
       // if -n is found, next argument is ip 
-      if (!strcmp(argv[i],"-n")){     
+      if (strcmp(argv[i],"-n") == 0){     
         i++;
         ip = argv[i];             
       }
       //if -p is found, next argument is port
-      else if (!strcmp(argv[i],"-p")){ 
+      else if (strcmp(argv[i],"-p") == 0){ 
         i++;
         port = argv[i];
+        if (!valid_port(port)){
+          cout << "Error: Invalid port" << endl;
+          return -1;
+        }
       }
     }
 

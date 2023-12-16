@@ -26,6 +26,8 @@ int getProtocolType(string protocol);
 
 bool valid_N_args(int code, int n_args);
 
+bool valid_port(string port);
+
 bool valid_uid(string uid);
 
 bool valid_aid(string aid);

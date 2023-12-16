@@ -97,6 +97,14 @@ bool valid_N_args(int code, int n_args){
 }
 
 /**
+ * @brief Validates port
+ * @param port
+ * @return true if port is valid
+ * @return false otherwise
+*/
+bool valid_port(string port) {return port.size() <= 5 && all_of(port.begin(), port.end(), ::isdigit);}
+
+/**
  * @brief Validates uid
  * @param uid 
  * @return true if uid is valid

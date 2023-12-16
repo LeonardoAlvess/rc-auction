@@ -13,6 +13,16 @@
 
 using namespace std;
 
+
+/**
+ * @brief High level function that takes care of the LIN request
+ * @param uid - The user id to login/register
+ * @param pass - The password that the user submitted
+ * @return "RLI OK" if successful login
+ * @return "RLI REG" if user wasn't registered
+ * @return "RLI NOK" if password not right
+ * @return "ERR" if invalid pass ou uid
+ */
 string sv_login_process(string uid, string pass){
     string msg, saved_pass;
 
@@ -34,7 +44,15 @@ string sv_login_process(string uid, string pass){
     return msg;
 }
 
-
+/**
+ * @brief High level function that takes care of the LOU request
+ * @param uid - The user id to login/register
+ * @param pass - The password that the user submitted
+ * @return "RLO OK" if successful logout
+ * @return "RLI UNR" if user wasn't registered
+ * @return "RLI NOK" if password not right or user not logged in
+ * @return "ERR" if invalid pass ou uid
+ */
 string sv_logout_process(string uid, string pass){
     string msg;
     if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR\n";
@@ -47,6 +65,15 @@ string sv_logout_process(string uid, string pass){
     return msg;
 }
 
+/**
+ * @brief High level function that takes care of the UNR request
+ * @param uid - The user id to login/register
+ * @param pass - The password that the user submitted
+ * @return "RUR OK" if successful unregister
+ * @return "RUR UNR" if user wasn't registered
+ * @return "RUR NOK" if password not right or user not logged in
+ * @return "ERR" if invalid pass ou uid
+ */
 string sv_unregister_process(string uid, string pass){
     string msg;
     if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR\n";
@@ -59,6 +86,14 @@ string sv_unregister_process(string uid, string pass){
     return msg;
 }
 
+/**
+ * @brief High level function that takes care of the LMA request
+ * @param uid - The user id that made the request
+ * @return "RMA OK[ aid state]*" if successful listing
+ * @return "RMA NLG" if user not logged in
+ * @return "RMA NOK" if user has not hosted any auction
+ * @return "ERR" if uid
+ */
 string sv_myauctions_process(string uid){
     string msg, state;
     vector<string> aid_list;
@@ -68,7 +103,7 @@ string sv_myauctions_process(string uid){
     else{
         msg = "RMA OK";
         for(vector<string>::iterator it=aid_list.begin(); it != aid_list.end(); ++it){
-            if(!ended(*it)) state = "1";
+            if(!ended(*it)) state = "1";   
             else state = "0";
             msg += " "+ *it + " " + state;
         }
@@ -77,6 +112,14 @@ string sv_myauctions_process(string uid){
     return msg;
 }
 
+/**
+ * @brief High level function that takes care of the LMB request
+ * @param uid - The user id that made the request
+ * @return "RMB OK[ aid state]*" if successful listing
+ * @return "RMB NLG" if user not logged in
+ * @return "RMB NOK" if user has not bid on any auction
+ * @return "ERR" if uid
+ */
 string sv_mybids_process(string uid){
     string msg , state;
     vector<string> aid_list, empty;
@@ -95,7 +138,12 @@ string sv_mybids_process(string uid){
     return msg;
 }
 
-string sv_list_process(string port, string ip){
+/**
+ * @brief High level function that takes care of the LST request
+ * @return "RLS OK[ aid state]*" if successful listing
+ * @return "RLS NOK" there are no auctions to list
+ */
+string sv_list_process(){
     string msg , state;
     vector<string> aid_list = get_all_auctions();
     if (aid_list.size() == 0) msg = "RLS NOK";
@@ -111,6 +159,13 @@ string sv_list_process(string port, string ip){
     return msg;
     }
 
+/**
+ * @brief High level function that takes care of the SRC request
+ * @param aid - The auction to show record of
+ * @return "RRC OK [auction info] [ B bid_info]* [ E end_info]" if successful listing
+ * @return "RRC NOK" if the auction does not exist
+ * @return "ERR" if aid is invalid
+ */
 string sv_show_record_process(string aid){
     string msg, host_UID, name, asset_fname, start_value, timeactive, date, time;
     vector<string> bids_list;
@@ -149,6 +204,20 @@ string sv_show_record_process(string aid){
 
 
 //input is everything excluding fsize and data (might change to auction info obj)
+
+/**
+ * @brief High level function that takes care of the OPA request
+ * @param received - Pointer to a character array that holds the received message
+ * @param size - Size of the character array
+ * @param port - port from where the message was received
+ * @param ip - address from which the message was received
+ * @param socker_fd - file descriptor for the TCP socket with which to communicate
+ * @param verbose - Running mode flag, if true output received request info to terminal
+ * @return "ROA OK" if successful auction opening
+ * @return "ROA NLG" if user not logged in
+ * @return "RRC NOK" if the auction cannot be opened
+ * @return "ERR" if invalid OPA protocol
+ */
 string sv_open_process(char* received,int size, string port, string ip, int socket_fd, bool verbose){
     string trash = "",msg, aid, uid="", pass="", name="", start_value ="", timeactive ="", asset_fname ="", info;
     size_t bytes_read = 0, fsize = 0;
@@ -272,7 +341,15 @@ string sv_open_process(char* received,int size, string port, string ip, int sock
 }
 
 
-
+/**
+ * @brief High level function that takes care of the CLS request
+ * @param uid - The user attempting to close an auction
+ * @param pass - The password submitted by the user
+ * @param aid - The auction to close
+ * @return "RRC OK [auction info] [ B bid_info]* [ E end_info]" if successful listing
+ * @return "RRC NOK" if the auction does not exist
+ * @return "ERR" if aid is invalid
+ */
 string sv_close_process(string uid, string pass, string aid){
     string msg, end_info;
     if (!valid_uid(uid) || !valid_password(pass) || !valid_aid(aid)) msg = "ERR";

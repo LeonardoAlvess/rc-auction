@@ -12,7 +12,7 @@ string sv_myauctions_process(string uid);
 
 string sv_mybids_process(string uid);
 
-string sv_list_process(string port, string ip);
+string sv_list_process();
 
 string sv_show_record_process(string aid);
 
