@@ -185,7 +185,7 @@ bool valid_filesize(string filesize){ return filesize.size() <= 8;}
 bool valid_bid(string bid) {return bid.size() <= 6 && all_of(bid.begin(), bid.end(), ::isdigit);}
 
 
-string send_message_udp(string port, string ip,string message, CALL_MODE mode){
+string send_message_udp(string port, string ip,string message){
     /**
      * @brief Sends a message through udp and returns the response
      * @param port port to connect
@@ -212,19 +212,18 @@ string send_message_udp(string port, string ip,string message, CALL_MODE mode){
 
     // Get hostname
     if(getaddrinfo(&ip[0],&port[0],&hints,&res) == -1) exit(1);
-
+    
     // Send message
     if(sendto(fd,&message[0],message.size(),0,res->ai_addr,res->ai_addrlen) == -1) exit(1);
     addrlen=sizeof(addr);
 
     // Receive message in user mode
-    if (mode == USER_MODE){
-        if((size=recvfrom(fd,buffer,6015,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);     
-    }
-  
+    if((size=recvfrom(fd,buffer,6015,0,(struct sockaddr*)&addr,&addrlen)) == -1) exit(1);     
+    
     // End connection
     freeaddrinfo(res);
     close(fd);
+    
     return buffer;
 }
 

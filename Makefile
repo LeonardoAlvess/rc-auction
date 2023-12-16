@@ -33,3 +33,6 @@ clean:
 	rm -f src/client/*.o src/server/*.o
 	rm -f user AS
 	rm -f src/common/*.o
+server_clean:
+	rm -rf USERS/*
+	rm -rf AUCTIONS/*

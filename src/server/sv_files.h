@@ -5,9 +5,7 @@ using namespace std;
 
 int createUser(string uid, string pass);
 
-int createAuction(string aid, string start_info);
-
-int loadAsset(string aid, string asset_fname, char* asset_buf, int asset_size);
+FILE* createAuction(string aid, string asset_fname, string start_info);
 
 int hostAuction(string aid, string uid);
 

@@ -13,7 +13,7 @@
 
 using namespace std;
 
-int sv_login_process(string uid, string pass, string port, string ip, bool verbose){
+string sv_login_process(string uid, string pass){
     string msg, saved_pass;
 
     if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR\n";
@@ -22,21 +22,20 @@ int sv_login_process(string uid, string pass, string port, string ip, bool verbo
             msg = "RLI OK\n";
             createLogin(uid);
         }
+        else{
+            msg = "RLI NOK\n";
+        }
     }
     else{
         msg = "RLI REG\n";
         createUser(uid, pass);
         createLogin(uid);
     }
-    if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a LIN request\n";
-    send_message_udp(port,ip,msg, SERVER_MODE);
-    //cout << msg; //for testing
-    
-    return 0;
+    return msg;
 }
 
 
-int sv_logout_process(string uid, string pass, string port, string ip, bool verbose){
+string sv_logout_process(string uid, string pass){
     string msg;
     if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR\n";
     else if(!is_registered(uid)) msg = "RLO UNR\n";
@@ -45,13 +44,10 @@ int sv_logout_process(string uid, string pass, string port, string ip, bool verb
         msg = "RLO OK\n";
         eraseLogin(uid);
     }
-    if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a LOU request\n";
-    send_message_udp(port, ip, msg, SERVER_MODE);
-    //cout << msg+"\n"; //for testing
-    return 0;
+    return msg;
 }
 
-int sv_unregister_process(string uid, string pass, string port, string ip, bool verbose){
+string sv_unregister_process(string uid, string pass){
     string msg;
     if (!valid_uid(uid) || !valid_password(pass)) msg = "ERR\n";
     else if(!is_registered(uid)) msg = "RUR UNR\n";
@@ -60,13 +56,10 @@ int sv_unregister_process(string uid, string pass, string port, string ip, bool 
         msg = "RUR OK\n";
         eraseUser(uid);
     }
-    if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a UNR request\n";
-    send_message_udp(port, ip, msg, SERVER_MODE);
-    //cout << msg+"\n"; //for testing
-    return 0;
+    return msg;
 }
 
-int sv_myauctions_process(string uid, string port, string ip, bool verbose){
+string sv_myauctions_process(string uid){
     string msg, state;
     vector<string> aid_list;
     if (!valid_uid(uid)) msg = "ERR";
@@ -81,13 +74,10 @@ int sv_myauctions_process(string uid, string port, string ip, bool verbose){
         }
     }
     msg += "\n";
-    if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a LMA request\n";
-    send_message_udp(port, ip, msg, SERVER_MODE);
-    //cout << msg+"\n"; //for testing
-    return 0;
+    return msg;
 }
 
-int sv_mybids_process(string uid, string port, string ip, bool verbose){
+string sv_mybids_process(string uid){
     string msg , state;
     vector<string> aid_list, empty;
     if (!valid_uid(uid)) msg = "ERR";
@@ -102,13 +92,10 @@ int sv_mybids_process(string uid, string port, string ip, bool verbose){
         }
     }
     msg += "\n";
-    if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a LMB request\n";
-    send_message_udp(port, ip, msg, SERVER_MODE);
-    //cout << msg+"\n"; //for testing
-    return 0;
+    return msg;
 }
 
-int sv_list_process(string port, string ip, bool verbose){
+string sv_list_process(string port, string ip){
     string msg , state;
     vector<string> aid_list = get_all_auctions();
     if (aid_list.size() == 0) msg = "RLS NOK";
@@ -121,13 +108,10 @@ int sv_list_process(string port, string ip, bool verbose){
         }
     }
     msg += "\n";
-    if(verbose) cout << "User unknown @ address "+ip+":"+port+" made a LMB request\n";
-    send_message_udp(port,ip,msg, SERVER_MODE);
-    //cout << msg+"\n"; //for testing
-    return 0;
+    return msg;
     }
 
-int sv_show_record_process(string aid, string port, string ip, bool verbose){
+string sv_show_record_process(string aid){
     string msg, host_UID, name, asset_fname, start_value, timeactive, date, time;
     vector<string> bids_list;
     if (!valid_aid(aid)) msg = "ERR";
@@ -159,19 +143,16 @@ int sv_show_record_process(string aid, string port, string ip, bool verbose){
         }
     }
     msg += "\n";
-    if(verbose) cout << "User unknown @ address "+ip+":"+port+" made a LMB request\n";
-    send_message_udp(port, ip, msg, SERVER_MODE);
-    //cout << msg+"\n"; //for testing
-    return 0;
+    return msg;
 }
 
+
+
 //input is everything excluding fsize and data (might change to auction info obj)
-int sv_open_process(char* received,int size, string port, string ip, int socket_fd, bool verbose){
+string sv_open_process(char* received,int size, string port, string ip, int socket_fd, bool verbose){
     string trash = "",msg, aid, uid="", pass="", name="", start_value ="", timeactive ="", asset_fname ="", info;
     size_t bytes_read = 0, fsize = 0;
 
-    cout << "Received: " << received << endl;
-    cout << size << endl;
     // Parse the response
     istringstream iss;
     do{
@@ -181,7 +162,7 @@ int sv_open_process(char* received,int size, string port, string ip, int socket_
         // Reset the istringstream
         iss.clear();
         iss.str(received);
-
+        
         if(trash == ""){
           iss >> trash;
           bytes_read += trash.size() + BLANK_SPACE;
@@ -194,7 +175,7 @@ int sv_open_process(char* received,int size, string port, string ip, int socket_
           if(uid == "")
             // Read again
             continue;
-          if(verbose) cout << "User unknown @ address "+ip+":"+port+" made a OPA request\n";
+          if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a OPA request\n";
           bytes_read += uid.size() + BLANK_SPACE;
         }
 
@@ -259,52 +240,40 @@ int sv_open_process(char* received,int size, string port, string ip, int socket_
           break;
         }
         
-
-
-        
     }
     while((size = receive_message_tcp(socket_fd, received)) != 0);
-        
-    cout << "Received: " << received << endl;
-    cout << uid << "\n";
-    cout << pass << "\n";
-    cout << name << "\n";
-    cout << start_value << "\n";
-    cout << timeactive << "\n";
-    cout << asset_fname << "\n";
-    cout << fsize << "\n";
-    cout << bytes_read << "\n";
-    cout << size << "\n";
 
     if (!valid_uid(uid) || !valid_password(pass) || !valid_auction_name(name) || !valid_start_value(start_value) || !valid_duration(timeactive)) msg = "ERR";
     else if (!is_logged(uid)) msg = "ROA NLG";
     else if (!authenticated(uid, pass)) msg = "ROA NOK";    
     else{
+
         aid = get_unique_aid();
+        FILE *fp;
 
         info = uid+" "+name+" "+asset_fname+" "+start_value+" "+timeactive+ " " + get_current_time();
-        if (aid == "1000" || createAuction(aid, info) == -1) msg = "ROA NOK";
+        if (aid == "1000" || (fp = createAuction(aid, asset_fname,info)) == NULL) msg = "ROA NOK";
         else {
             size_t total = size - bytes_read;
-            hostAuction(aid, uid);          //verificar password    
-            loadAsset(aid, asset_fname, received + bytes_read,size - bytes_read);
+            hostAuction(aid, uid);          //verificar password
+            fwrite(received + bytes_read, sizeof(char),size - bytes_read,fp);
             while(total < fsize){
                 size = receive_message_tcp(socket_fd, received);
                 total += size;
                 if(total > fsize) size -= total - fsize;
-                loadAsset(aid, asset_fname, received, size);
-            }           
+                fwrite(received, sizeof(char),size,fp);
+            }
+            fclose(fp);           
             msg = "ROA OK "+aid;
         }
     }
     msg += "\n";
-    send_message_tcp(socket_fd, msg);
-    close(socket_fd);
-    //cout << msg;
-    return 0;
+    return msg;
 }
 
-int sv_close_process(string uid, string pass, string aid, string port, string ip, int socket_fd, bool verbose){
+
+
+string sv_close_process(string uid, string pass, string aid){
     string msg, end_info;
     if (!valid_uid(uid) || !valid_password(pass) || !valid_aid(aid)) msg = "ERR";
     if (!is_logged(uid) || !authenticated(uid, pass)) msg = "RCL NLG";
@@ -317,14 +286,10 @@ int sv_close_process(string uid, string pass, string aid, string port, string ip
         endAuction(aid, end_info);
     }
     msg += "\n";
-    if(verbose) cout << "User unknown @ address "+ip+":"+port+" made a CLS request\n";
-    send_message_tcp(socket_fd, msg);
-    close(socket_fd);
-    //cout << msg;
-    return 0;
+    return msg;
 }
 
-int sv_bid_process(string uid, string pass, string aid, string bid, string port, string ip, int socket_fd, bool verbose){
+string sv_bid_process(string uid, string pass, string aid, string bid){
     string bid_datetime, bid_sec_time, bid_info;
     string status = validateBid(aid, uid,pass, bid);    
     string msg = "RBD " + status;
@@ -335,13 +300,10 @@ int sv_bid_process(string uid, string pass, string aid, string bid, string port,
         makeBid(aid, uid, bid, bid_info);
     }
     msg += "\n";
-    if(verbose) cout << "User unknown @ address "+ip+":"+port+" made a BID request\n";
-    send_message_tcp(socket_fd, msg);
-    close(socket_fd);
-    return 0;
+    return msg;
 }
 
-void sv_show_asset(char* input, string port, string ip, int socket_fd, bool verbose){
+string sv_show_asset(char* input, string port, string ip, int socket_fd, bool verbose){
     string msg, trash, aid, filename, asset_fname;
     istringstream iss(input);
     iss >> trash >> aid;
@@ -353,11 +315,12 @@ void sv_show_asset(char* input, string port, string ip, int socket_fd, bool verb
         ifstream ifs(filename, ifstream::in);
         ifs >> trash >> trash >> asset_fname;
         ifs.close();
-        cout << asset_fname << endl;
         filename = "AUCTIONS/"+aid+"/"+asset_fname;
         FILE *file = fopen(&filename[0], "rb");
-        uintmax_t fsize = filesystem::file_size(filename);  
-        msg += " " + asset_fname + " " + to_string(fsize);
+        uintmax_t fsize = filesystem::file_size(filename);
+        cout << fsize << endl;  
+        msg += " " + asset_fname + " " + to_string(fsize) + " ";
+        
         send_message_tcp(socket_fd,msg.c_str(),msg.size());
         int total = 0, size;
         // Read/Send the file to the server
@@ -373,8 +336,5 @@ void sv_show_asset(char* input, string port, string ip, int socket_fd, bool verb
     msg += "\n";
     
     if(verbose) cout << "User unknown @ address "+ip+":"+port+" made a LMB request\n";
-    send_message_tcp(socket_fd, msg);
-    close(socket_fd);
-    //cout << msg+"\n"; //for testing
-    return;
+    return msg;
 }

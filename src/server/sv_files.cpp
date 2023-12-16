@@ -47,35 +47,33 @@ int createUser(string uid, string pass){
     return 0;
 }
 
-int createAuction(string aid, string start_info){
+FILE* createAuction(string aid, string asset_fname, string start_info){
     int ret;
     string aid_dirname = "AUCTIONS/"+aid;
     ret = mkdir(&aid_dirname[0], 0700);
-    if (ret==-1) return -1;
+    if (ret==-1) return NULL;
 
     string bids_dirname = "AUCTIONS/"+aid+"/BIDS";
     ret = mkdir(&bids_dirname[0], 0700);
     if (ret==-1){
         rmdir(&aid_dirname[0]);
-        return -1;
+        return NULL;
     }
 
     string filename = aid_dirname+"/START_"+aid+".txt";
-    FILE *fp = fopen(&filename[0], "w");    
-    if (fp==NULL) return -1;
+    FILE *fp = fopen(&filename[0], "wb");    
+    if (fp==NULL) return NULL;
     fwrite(&start_info[0],sizeof(char),start_info.size(),fp);   
     fclose(fp);
 
-    return 0;
+    filename = aid_dirname+"/"+asset_fname;
+    cout << filename << endl;
+    FILE *asset = fopen(&filename[0], "wb");
+    cout << "asset" << asset << endl;
+    return asset;
 }
 
-int loadAsset(string aid, string asset_fname, char* asset_buf, int asset_size){
-    string filename = "AUCTIONS/"+aid+"/"+asset_fname;
-    FILE* fp = fopen(&filename[0],"ab");
-    fwrite(asset_buf, sizeof(char), asset_size,fp);
-    fclose(fp);
-    return 0;
-}
+
 
 int hostAuction(string aid, string uid){
     

@@ -2,6 +2,8 @@
 #include <sstream>
 #include "processes.h"
 #include <cstring>
+#define IP "localhost"
+#define PORT "58039"
 
 using namespace std;
 
@@ -131,18 +133,10 @@ int main(int argc, char *argv[]){
         break;
 
       case LIST:                                      //list command             
-        if (uid == ""){  
-          cout << "No user logged in\n";
-          break;
-        }
         list_process(port,ip);
         break;
       
       case SHOW_ASSET:                                //show asset command     
-        if (uid == ""){  
-          cout << "No user logged in\n";
-          break;
-        }
         show_asset_process(port,ip,args[1]);
         break;
       
@@ -155,10 +149,6 @@ int main(int argc, char *argv[]){
         break;
       
       case SHOW_RECORD:                               //show record command          
-        if (uid == ""){  
-          cout << "No user logged in\n";
-          break;
-        }
         show_record_process(port,ip,args[1]);
         break;
 

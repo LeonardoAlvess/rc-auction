@@ -43,7 +43,7 @@ void login_process(string port, string ip, vector<string> args, string& log_uid,
   }
   
   // Send the login command to the server threw UDP
-  string received = send_message_udp(port, ip, "LIN " + uid + " " + password + "\n",USER_MODE);
+  string received = send_message_udp(port, ip, "LIN " + uid + " " + password + "\n");
   
   // Parse the response
   istringstream iss(received);
@@ -83,7 +83,7 @@ void logout_process(string port, string ip, string& log_uid, string& log_pass){
 
 
   //Send the logout command to the server
-  string received = send_message_udp(port, ip, "LOU " + log_uid + " " + log_pass + "\n",USER_MODE);
+  string received = send_message_udp(port, ip, "LOU " + log_uid + " " + log_pass + "\n");
   
   //Parse the response
   istringstream iss(received);
@@ -119,7 +119,7 @@ void unregister_process(string port, string ip, string& log_uid, string& log_pas
   */
 
   //Send the unregister command to the server
-  string received = send_message_udp(port, ip, "UNR " + log_uid + " " + log_pass + "\n",USER_MODE);
+  string received = send_message_udp(port, ip, "UNR " + log_uid + " " + log_pass + "\n");
   
   //Parse the response
   istringstream iss(received);
@@ -302,7 +302,7 @@ void my_auctions_process(string port, string ip, string uid){
    */
 
   // Send command to server
-  string received = send_message_udp(port, ip, "LMA " + uid + "\n",USER_MODE);
+  string received = send_message_udp(port, ip, "LMA " + uid + "\n");
   
   // Parse the first part of the response
   istringstream iss(received);
@@ -341,9 +341,9 @@ void my_bids_process(string port, string ip, string uid){
    */
 
   //sends a message to the server
-  string received = send_message_udp(port, ip, "LMB " + uid + "\n",USER_MODE);
+  string received = send_message_udp(port, ip, "LMB " + uid + "\n");
 
-  // Parses the first part of the response
+  // Parses the first part of the response  
   istringstream iss(received);
   string code,status;
   iss >> code >> status;
@@ -379,7 +379,7 @@ void list_process(string port, string ip){
   */
 
   //sends a message to the server
-  string received = send_message_udp(port, ip, "LST\n",USER_MODE);
+  string received = send_message_udp(port, ip, "LST\n");
   
   // Parses the first part of the response
   istringstream iss(received);
@@ -502,9 +502,10 @@ void show_asset_process(string port, string ip, string aid){
 
   // Create the file
   FILE *file = fopen(file_name.c_str(), "wb");
-
+  
   // In case the file size was smaller than the buffer size
   if ( total > file_size ){
+    cout << "here";
     fwrite(received + bytes_read, sizeof(char), file_size , file);
   }
   else
@@ -605,7 +606,7 @@ void show_record_process(string port, string ip, string aid){
   string host_UID, auction_name, asset_fname, start_value, start_date, start_time, timeactive;
   string bidder_UID, bid_value, bid_date, bid_time, bid_sec_time;
   string end_date, end_time, end_sec_time;
-  string code,status,received = send_message_udp(port, ip, "SRC " + aid + "\n",USER_MODE);
+  string code,status,received = send_message_udp(port, ip, "SRC " + aid + "\n");
 
   // Parse the first part of the response
   istringstream iss(received);

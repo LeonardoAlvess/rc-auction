@@ -1,9 +1,6 @@
 #include <string>
 using namespace std;
 
-#define PORT "58011"     
-#define IP "localhost"
-//#define IP "tejo.tecnico.ulisboa.pt"
 #define BUFFER_SIZE 512
 #define BLANK_SPACE 1
 
@@ -21,11 +18,6 @@ enum CommandType {
     BID,
     SHOW_RECORD,  
     UNKNOWN_COMMAND
-};
-
-enum CALL_MODE {
-    USER_MODE, 
-    SERVER_MODE
 };
 
 int getCommandType(const string& command);
@@ -52,7 +44,7 @@ bool valid_filesize(string filesize);
 
 bool valid_bid(string bid);
 
-string send_message_udp(string port,string ip, string message, CALL_MODE mode);
+string send_message_udp(string port,string ip, string message);
 
 string send_single_message_tcp( string port, string ip, string message);
 
