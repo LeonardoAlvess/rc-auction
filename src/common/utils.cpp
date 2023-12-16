@@ -326,3 +326,11 @@ void end_tcp(int fd,struct addrinfo *res){
     freeaddrinfo(res);
     close(fd);
 }
+
+int get_file_size( FILE* fd){
+    long int size;
+    fseek(fd,0,SEEK_END);
+    size = ftell(fd);
+    fseek(fd,0, SEEK_SET);
+    return size; 
+}

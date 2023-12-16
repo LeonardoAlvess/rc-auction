@@ -190,7 +190,7 @@ void open_auction_process(string port, string ip, vector<string> args, string& u
   }  
 
   // Get/Check if the file size is valid
-  uintmax_t total = 0, fsize = filesystem::file_size(args[2]);    
+  int total = 0, fsize = get_file_size(file);    
   if (!valid_filesize(to_string(fsize))){
     cout << "File too big\n";
     fclose(file);

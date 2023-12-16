@@ -317,7 +317,7 @@ string sv_show_asset(char* input, string port, string ip, int socket_fd, bool ve
         ifs.close();
         filename = "AUCTIONS/"+aid+"/"+asset_fname;
         FILE *file = fopen(&filename[0], "rb");
-        uintmax_t fsize = filesystem::file_size(filename);
+        long int fsize = get_file_size(file);
         cout << fsize << endl;  
         msg += " " + asset_fname + " " + to_string(fsize) + " ";
         

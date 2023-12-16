@@ -59,3 +59,5 @@ string receive_message_tcp(int fd);
 int receive_message_tcp(int fd, char* buffer);
 
 void end_tcp(int fd,struct addrinfo *res);
+
+int get_file_size(FILE* fd);
