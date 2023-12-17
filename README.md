@@ -9,6 +9,10 @@ O projeto está completamente implementado, permitindo a execução de todos os 
     Utilizadores: login, logout, unregister, exit
     Leilões: open, close, show_asset, show_record, my_auctions, bid, my_bids, list
     (Consulte o enunciado para informações detalhadas sobre a utilização dos comandos).
+-Estrutura de ficheiros
+
+Na diretoria principal encontra-se a makefile, os executáveis, uma pasta src com o código base e as pastas AUCTIONS e USERS.
+A diretoria src está subdividida em common, server e client. Estas contêm os respetivos ficheiros .o, .h e .cpp. O sistema de ficheiros das pastas AUCTIONS e USERS está no Guia do Projeto.
 
 -Utilização do Makefile
 
@@ -22,9 +26,4 @@ O projeto inclui um makefile que oferece os seguintes comandos:
 
 O servidor pode ser terminado apenas através do comando CTRL+C. Ele armazena permanentemente todas as informações, incluindo criação, fecho e listagem de leilões e utilizadores em diretórios pré-criados denominados USERS e AUCTIONS.
 Esta plataforma proporciona uma gestão completa de leilões e utilizadores, com comandos claros para a sua operação.
-
--Estrutura de ficheiros
-
-Na diretoria principal encontra-se a makefile, os executáveis, uma pasta src com o código base e as pastas AUCTIONS E USERS.
-A diretoria src está subdividida em common, server e client. Estas contêm os respetivos ficheiros .o, .h e .cpp.
 
