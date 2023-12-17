@@ -1,7 +1,8 @@
 # Projeto RC-Auction - Plataforma de Leilões
 
 Este projeto, desenvolvido por Leonardo Alves (103706) e Gonçalo Rodrigues (90256), trata-se de uma aplicação para criação e gestão de leilões através de conexões UDP e TCP.
-Funcionalidades
+
+-Funcionalidades
 
 O projeto está completamente implementado, permitindo a execução de todos os comandos requeridos, tais como:
 
@@ -21,4 +22,9 @@ O projeto inclui um makefile que oferece os seguintes comandos:
 
 O servidor pode ser terminado apenas através do comando CTRL+C. Ele armazena permanentemente todas as informações, incluindo criação, fecho e listagem de leilões e utilizadores em diretórios pré-criados denominados USERS e AUCTIONS.
 Esta plataforma proporciona uma gestão completa de leilões e utilizadores, com comandos claros para a sua operação.
+
+-Estrutura de ficheiros
+
+Na diretoria principal encontra-se a makefile, os executáveis, uma pasta src com o código base e as pastas AUCTIONS E USERS.
+A diretoria src está subdividida em common, server e client. Estas contêm os respetivos ficheiros .o, .h e .cpp.
 
