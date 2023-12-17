@@ -146,9 +146,10 @@ string validateBid(string aid, string uid, string pass, string bid){
     string bids_dirname = "AUCTIONS/"+aid+"/BIDS/";
     struct dirent **filelist;
     int n_entries = scandir(&bids_dirname[0],&filelist, 0,alphasort);
-    if (n_entries == 2) return "ACC";
+
+    if (n_entries == 2) return "ACC";   //no bids to compare
     bid_value = filelist[n_entries-1]->d_name;
-    if (stoi(bid_value.substr(0,6)) >= stoi(bid)) return "REF";
+    if (stoi(bid_value.substr(0,6)) >= stoi(bid)) return "REF"; //discarding .txt and converting to integer to compare
 
     return "ACC";
 }

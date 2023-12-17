@@ -465,7 +465,6 @@ void show_asset_process(string port, string ip, string aid){
       break;
   }
 
-  cout << tokens[0] << endl;
   code = tokens[0];
   status = tokens[1];
 
@@ -526,7 +525,8 @@ void show_asset_process(string port, string ip, string aid){
   end_tcp(fd, res);
   fclose(file);
 
-  cout << "File " + file_name + " received\n";
+  cout << "File " + file_name + " received\n"+
+          "The file was stored in the executable's directory\n";
 }
 
 void bid_process(string port, string ip, vector<string> args, string uid, string pass){ 
@@ -619,33 +619,30 @@ void show_record_process(string port, string ip, string aid){
     iss >> host_UID >> auction_name >> asset_fname >> start_value >> start_date >> start_time >> timeactive;
 
     // Display the auction information
-    cout << "Auction "+auction_name+" hosted by user "+host_UID+"\n"
-           "File name: "+asset_fname+"\n"
-           "Starting value: "+start_value+"\n"
-           "Starting time "+start_date+" "+start_time+"\n"
-           "Auction duration: "+timeactive+"\n";
+    cout << "\nAuction "+auction_name+" hosted by user "+host_UID+"\n"
+           "File name: "+asset_fname+"\n";
 
-    bool bid_history = true;
+    cout << "-----------------------------------------------------\n"
+            "                  AUCTION HISTORY                    \n"
+            "-----------------------------------------------------\n";
+
+    cout << start_date+" "+start_time+" : Auction started at "+start_value+" credits\n"+
+                "                      Expected duration: "+timeactive+" seconds\n"
+                "-----------------------------------------------------\n";  
+
     //Go through the information and display the bids and the end of the auction
     while(iss >> code){
       if (code == "B"){
-        if(bid_history == true){
-          // Display the bid history if there are any bids
-          cout << "---------------------------------------------------\n"
-                  "                   BID HISTORY                     \n"
-                  "---------------------------------------------------\n";
-          bid_history = false;
-        }
         iss >> bidder_UID >> bid_value >> bid_date >> bid_time >> bid_sec_time;
 
-        cout << bid_date+" "+bid_time+" : User "+bidder_UID+" bid "+bid_value+" credits \n"+
+        cout << bid_date+" "+bid_time+" : User "+bidder_UID+" bid "+bid_value+" credits\n"+
                 "                      Time since start: "+bid_sec_time+" seconds\n"
-                "---------------------------------------------------\n";
+                "-----------------------------------------------------\n";
       }
       else if (code == "E"){
         iss >> end_date >> end_time >> end_sec_time;
-        cout << "Auction ended at " + end_date + " " + end_time + "\n"
-                +end_sec_time+" seconds since start\n";
+        cout << end_date + " " + end_time + " : Auction was closed\n"+
+                "                      Time since start: "+end_sec_time+" seconds\n";
       }
       else break;
     }    

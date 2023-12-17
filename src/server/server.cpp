@@ -135,10 +135,10 @@ int main(int argc, char *argv[])
                 size = recvfrom(ufd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&udp_useraddr, &addrlen);
                 if (size >= 0)
                 {
-                    printf("---UDP socket: %s\n", buffer);
+                    //printf("---UDP socket: %s\n", buffer);
                     errcode = getnameinfo((struct sockaddr *)&udp_useraddr, addrlen, host, sizeof host, service, sizeof service, 0);
-                    if (errcode == 0)
-                        printf("       Sent by [%s:%s]\n", host, service);
+                   // if (errcode == 0)
+                       // printf("       Sent by [%s:%s]\n", host, service);
                 }
             }
             //TCP Protocol
@@ -152,10 +152,10 @@ int main(int argc, char *argv[])
                     exit(1);
                 if (size >= 0)
                 {
-                    printf("---TCP socket: %s\n", buffer);
+                   // printf("---TCP socket: %s\n", buffer);
                     errcode = getnameinfo((struct sockaddr *)&tcp_useraddr, addrlen, host, sizeof host, service, sizeof service, 0);
-                    if (errcode == 0)
-                        printf("       Sent by [%s:%s]\n", host, service);
+                  //  if (errcode == 0)
+                      //  printf("       Sent by [%s:%s]\n", host, service);
                 }
             }
             string token, ip = host, port = service;
