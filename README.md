@@ -12,6 +12,7 @@ O projeto está completamente implementado, permitindo a execução de todos os 
 Observações
 
 O servidor pode ser terminado apenas através do comando CTRL+C. Ele armazena permanentemente todas as informações, incluindo criação, fecho e listagem de leilões e utilizadores em diretórios pré-criados denominados USERS e AUCTIONS.
+
 Utilização do Makefile
 
 O projeto inclui um makefile que oferece os seguintes comandos:
