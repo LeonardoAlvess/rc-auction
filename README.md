@@ -9,11 +9,7 @@ O projeto está completamente implementado, permitindo a execução de todos os 
     Leilões: open, close, show_asset, show_record, my_auctions, bid, my_bids, list
     (Consulte o enunciado para informações detalhadas sobre a utilização dos comandos).
 
-Observações
-
-O servidor pode ser terminado apenas através do comando CTRL+C. Ele armazena permanentemente todas as informações, incluindo criação, fecho e listagem de leilões e utilizadores em diretórios pré-criados denominados USERS e AUCTIONS.
-
-Utilização do Makefile
+-Utilização do Makefile
 
 O projeto inclui um makefile que oferece os seguintes comandos:
 
@@ -21,4 +17,8 @@ O projeto inclui um makefile que oferece os seguintes comandos:
     make clean: Elimina os executáveis.
     make server_clean: Limpa as pastas do USER e AS.
 
+-Observações
+
+O servidor pode ser terminado apenas através do comando CTRL+C. Ele armazena permanentemente todas as informações, incluindo criação, fecho e listagem de leilões e utilizadores em diretórios pré-criados denominados USERS e AUCTIONS.
 Esta plataforma proporciona uma gestão completa de leilões e utilizadores, com comandos claros para a sua operação.
+
