@@ -215,7 +215,7 @@ string sv_show_record_process(string aid){
  * @param verbose - Running mode flag, if true output received request info to terminal
  * @return "ROA OK" if successful auction opening
  * @return "ROA NLG" if user not logged in
- * @return "RRC NOK" if the auction cannot be opened
+ * @return "ROA NOK" if the auction cannot be opened
  * @return "ERR" if invalid OPA protocol
  */
 string sv_open_process(char* received,int size, string port, string ip, int socket_fd, bool verbose){
@@ -224,7 +224,10 @@ string sv_open_process(char* received,int size, string port, string ip, int sock
 
     // Parse the response
     istringstream iss;
-    do{
+    string tokens[8];
+    int i = 0;
+    do
+    {
         // Reset bytes_read
         bytes_read = 0;
 
@@ -232,85 +235,30 @@ string sv_open_process(char* received,int size, string port, string ip, int sock
         iss.clear();
         iss.str(received);
         
-        if(trash == ""){
-          iss >> trash;
-          bytes_read += trash.size() + BLANK_SPACE;
+        while(i <= 7){
+            iss >> tokens[i];
+            // in case there are no more tokens to read
+            if(tokens[i] == "")
+                break;
+
+            // Update the bytes_read
+            bytes_read += tokens[i].size() + BLANK_SPACE;
+            i++; 
         }
-
-
-        if(uid == ""){
-          iss >> uid;
-          // In case the file_name wasn't yet received
-          if(uid == "")
-            // Read again
-            continue;
-          if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a OPA request\n";
-          bytes_read += uid.size() + BLANK_SPACE;
-        }
-
-        if(pass == ""){
-          iss >> pass;
-          // In case the file_name wasn't yet received
-          if(pass == "")
-            // Read again
-            continue;
-
-          bytes_read += pass.size() + BLANK_SPACE;
-        }
-
-        if(name == ""){
-          iss >> name;
-          // In case the file_name wasn't yet received
-          if(name == "")
-            // Read again
-            continue;
-
-          bytes_read += name.size() + BLANK_SPACE;
-        }
-
-        if(start_value == ""){
-          iss >> start_value;
-          // In case the file_name wasn't yet received
-          if(uid == "")
-            // Read again
-            continue;
-
-          bytes_read += start_value.size() + BLANK_SPACE;
-        }
-
-        if(timeactive == ""){
-          iss >> timeactive;
-          // In case the file_name wasn't yet received
-          if(timeactive == "")
-            // Read again
-            continue;
-
-        bytes_read += timeactive.size() + BLANK_SPACE;
-        }
-
-        if(asset_fname == ""){
-          iss >> asset_fname;
-          // In case the file_name wasn't yet received
-          if(asset_fname == "")
-            // Read again
-            continue;
-
-          bytes_read += asset_fname.size() + BLANK_SPACE;
-        }
-        
-        if(fsize == 0){
-          iss >> fsize;
-          // In case the file_name wasn't yet received
-          if(fsize == 0)
-            // Read again
-            continue;
-
-          bytes_read += to_string(fsize).size() + BLANK_SPACE;
-          break;
-        }
-        
+        if(i == 8)
+            break;
     }
     while((size = receive_message_tcp(socket_fd, received)) != 0);
+
+    uid = tokens[1];
+    pass = tokens[2];
+    name = tokens[3];
+    start_value = tokens[4];
+    timeactive = tokens[5];
+    asset_fname = tokens[6];
+    fsize = stoi(tokens[7]);
+
+    if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a OPA request\n";
 
     if (!valid_uid(uid) || !valid_password(pass) || !valid_auction_name(name) || !valid_start_value(start_value) || !valid_duration(timeactive)) msg = "ERR";
     else if (!is_logged(uid)) msg = "ROA NLG";
@@ -346,8 +294,8 @@ string sv_open_process(char* received,int size, string port, string ip, int sock
  * @param uid - The user attempting to close an auction
  * @param pass - The password submitted by the user
  * @param aid - The auction to close
- * @return "RRC OK [auction info] [ B bid_info]* [ E end_info]" if successful listing
- * @return "RRC NOK" if the auction does not exist
+ * @return "RCL OK [auction info] [ B bid_info]* [ E end_info]" if successful listing
+ * @return "RCL NOK" if the auction does not exist
  * @return "ERR" if aid is invalid
  */
 string sv_close_process(string uid, string pass, string aid){
@@ -366,6 +314,15 @@ string sv_close_process(string uid, string pass, string aid){
     return msg;
 }
 
+/**
+ * @brief High level function that takes care of the BID request
+ * @param uid - The user attempting to make a bid
+ * @param pass - The password submitted by the user
+ * @param aid - The auction to make a bid on
+ * @return "RBD OK [auction info] [ B bid_info]* [ E end_info]" if successful listing
+ * @return "RBD NOK" if the auction does not exist
+ * @return "ERR" if aid is invalid
+ */
 string sv_bid_process(string uid, string pass, string aid, string bid){
     string bid_datetime, bid_sec_time, bid_info;
     string status = validateBid(aid, uid,pass, bid);    
@@ -380,12 +337,24 @@ string sv_bid_process(string uid, string pass, string aid, string bid){
     return msg;
 }
 
+/**
+ * @brief High level function that takes care of the SAS request
+ * @param input - Pointer to a character array that holds the received message
+ * @param port - port from where the message was received
+ * @param ip - address from which the message was received
+ * @param socker_fd - file descriptor for the TCP socket with which to communicate
+ * @param verbose - Running mode flag, if true output received request info to terminal
+ * @return "\n" if successfully sent the asset to the user
+ * @return "RRC NOK\n" if the auction does not exist
+ * @return "ERR\n" if the aid in input is not valid
+ * @return "ERR" if aid is invalid
+ */
 string sv_show_asset(char* input, string port, string ip, int socket_fd, bool verbose){
     string msg, trash, aid, filename, asset_fname;
     istringstream iss(input);
     iss >> trash >> aid;
     if (!valid_aid(aid)) msg = "ERR";
-    else if (!exists(aid)) msg = "RRC NOK";
+    else if (!exists(aid)) msg = "RSA NOK";
     else {
         msg = "RSA OK";
         filename = "AUCTIONS/"+aid+"/START_"+aid+".txt";
@@ -394,8 +363,7 @@ string sv_show_asset(char* input, string port, string ip, int socket_fd, bool ve
         ifs.close();
         filename = "AUCTIONS/"+aid+"/"+asset_fname;
         FILE *file = fopen(&filename[0], "rb");
-        long int fsize = get_file_size(file);
-        cout << fsize << endl;  
+        long int fsize = get_file_size(file);  
         msg += " " + asset_fname + " " + to_string(fsize) + " ";
         
         send_message_tcp(socket_fd,msg.c_str(),msg.size());

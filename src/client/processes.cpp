@@ -412,7 +412,7 @@ void list_process(string port, string ip){
 
 void show_asset_process(string port, string ip, string aid){
   /**
-   * @brief This function handles the show asset process, validates the aid
+   *  @brief This function handles the show asset process, validates the aid
    *  and if it is valid sends the show asset command to the server
    *  @param  port: the port to connect to
    *  @param  ip: the ip to connect to
@@ -427,7 +427,7 @@ void show_asset_process(string port, string ip, string aid){
 
   string code = "", status = "", file_name = "";
   char received[BUFFER_SIZE];
-  int fd, size, file_size = 0, bytes_read;
+  int fd, size, file_size, bytes_read;
   struct addrinfo *res;
 
   // Create the message to send
@@ -439,6 +439,8 @@ void show_asset_process(string port, string ip, string aid){
 
   // Parse the response
   istringstream iss;
+  string tokens[4];
+  int i = 0;
   while((size = receive_message_tcp(fd, received)) != 0){
     // Reset bytes_read
     bytes_read = 0;
@@ -447,55 +449,43 @@ void show_asset_process(string port, string ip, string aid){
     iss.clear();
     iss.str(received);
     
-    if(code == ""){
-      iss >> code;
-      if (code != "RSA")
-      {
-      cout << "Unexpected server response\n";
-        return;
-      }
+    // while there are tokens to read
+    while(i <= 3){
+      iss >> tokens[i];
+      // in case there are no more tokens to read
+      if(tokens[i] == "")
+        break;
 
-      bytes_read += code.size() + BLANK_SPACE;
+      // Update the bytes_read
+      bytes_read += tokens[i].size() + BLANK_SPACE;
+      i++; 
     }
-    
-    if(status == ""){
-      iss >> status;
-      // In case the status wasn't yet received
-      if(status == "")
-        // Read again
-        continue;
-      if (status == "NOK")
-      {
-        cout << "There was an error displaying the asset\n";
-        return;
-      }
-
-      bytes_read += status.size() + BLANK_SPACE;  
-    }
-    
-
-    if(file_name == ""){
-      iss >> file_name;
-      // In case the file_name wasn't yet received
-      if(file_name == "")
-        // Read again
-        continue;
-        
-      bytes_read += file_name.size() + BLANK_SPACE;
-    }
-
-    if(file_size == 0){
-      iss >> file_size;
-      // In case the file_size wasn't yet received
-      if(file_size == 0)
-        // Read again
-        continue;
-
-      bytes_read += to_string(file_size).size() + BLANK_SPACE;
+    // in case there are no more tokens to read
+    if (i == 4)
       break;
-    }
-
   }
+
+  cout << tokens[0] << endl;
+  code = tokens[0];
+  status = tokens[1];
+
+  // Check if the server response is valid
+  if (code != "RSA")
+  {
+    cout << "Unexpected server response\n";
+    return;
+  }
+
+  // Print the response
+  if (status == "NOK")
+  {
+    cout << "There was an error displaying the asset\n";
+    return;
+  }
+
+  file_name = tokens[2];
+  file_size = stoi(tokens[3]);
+  
 
   // Store total size of the file data received
   int total = size - bytes_read;
