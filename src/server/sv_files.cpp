@@ -7,7 +7,6 @@
 #include <dirent.h>
 #include <time.h>
 #include <fstream>
-#include <iostream>
 
 using namespace std;
 
@@ -85,11 +84,8 @@ FILE* createAuction(string aid, string asset_fname, string start_info){
     if (fp==NULL) return NULL;
     fwrite(&start_info[0],sizeof(char),start_info.size(),fp);   
     fclose(fp);
-
     filename = aid_dirname+"/"+asset_fname;
-    cout << filename << endl;
     FILE *asset = fopen(&filename[0], "wb");
-    cout << "asset" << asset << endl;
     return asset;
 }
 

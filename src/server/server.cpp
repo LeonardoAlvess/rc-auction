@@ -26,7 +26,7 @@ using namespace std;
 */
 int send_verbose_msg(string uid, string req, string ip, string port)
 {
-    string msg = "User " + uid + " made a " + req + " request from " + ip + ":" + port;
+    string msg = "User " + uid + " made a " + req + " request from " + ip + ":" + port + "\n";
     cout << msg;
     return 0;
 }
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 
     fd_set inputs, testfds;
     struct timeval timeout;
-    int out_fds, errcode;
+    int out_fds;
     ssize_t size;
     char buffer[BUFFER_SIZE];
 
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     hints_udp.ai_socktype = SOCK_DGRAM;
     hints_udp.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
 
-    if ((errcode = getaddrinfo(NULL, &port[0], &hints_udp, &res_udp)) != 0)
+    if (getaddrinfo(NULL, &port[0], &hints_udp, &res_udp) != 0)
         exit(1); // On error
 
     if ((ufd = socket(res_udp->ai_family, res_udp->ai_socktype, res_udp->ai_protocol)) == -1)
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
     hints_tcp.ai_socktype = SOCK_STREAM;
     hints_tcp.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
 
-    if ((errcode = getaddrinfo(NULL, &port[0], &hints_tcp, &res_tcp)) != 0)
+    if (getaddrinfo(NULL, &port[0], &hints_tcp, &res_tcp) != 0)
         exit(1); // On error
 
     tfd = socket(res_tcp->ai_family, res_tcp->ai_socktype, res_tcp->ai_protocol);
@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
 
         switch (out_fds)
         {
+        // Timeout event
         case 0:
-            printf("\n ---------------Timeout event-----------------\n");
             break;
         case -1:
             perror("select");
@@ -135,10 +135,7 @@ int main(int argc, char *argv[])
                 size = recvfrom(ufd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&udp_useraddr, &addrlen);
                 if (size >= 0)
                 {
-                    //printf("---UDP socket: %s\n", buffer);
-                    errcode = getnameinfo((struct sockaddr *)&udp_useraddr, addrlen, host, sizeof host, service, sizeof service, 0);
-                   // if (errcode == 0)
-                       // printf("       Sent by [%s:%s]\n", host, service);
+                    getnameinfo((struct sockaddr *)&udp_useraddr, addrlen, host, sizeof host, service, sizeof service, 0);
                 }
             }
             //TCP Protocol
@@ -152,10 +149,7 @@ int main(int argc, char *argv[])
                     exit(1);
                 if (size >= 0)
                 {
-                   // printf("---TCP socket: %s\n", buffer);
-                    errcode = getnameinfo((struct sockaddr *)&tcp_useraddr, addrlen, host, sizeof host, service, sizeof service, 0);
-                  //  if (errcode == 0)
-                      //  printf("       Sent by [%s:%s]\n", host, service);
+                    getnameinfo((struct sockaddr *)&tcp_useraddr, addrlen, host, sizeof host, service, sizeof service, 0);
                 }
             }
             string token, ip = host, port = service;

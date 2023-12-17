@@ -258,7 +258,7 @@ string sv_open_process(char* received,int size, string port, string ip, int sock
     asset_fname = tokens[6];
     fsize = stoi(tokens[7]);
 
-    if(verbose) cout << "User "+uid+" @ address "+ip+":"+port+" made a OPA request\n";
+    if(verbose) cout << "User " + uid + " made a OPA request from " + ip + ":" + port + "\n";
 
     if (!valid_uid(uid) || !valid_password(pass) || !valid_auction_name(name) || !valid_start_value(start_value) || !valid_duration(timeactive)) msg = "ERR";
     else if (!is_logged(uid)) msg = "ROA NLG";
@@ -379,7 +379,7 @@ string sv_show_asset(char* input, string port, string ip, int socket_fd, bool ve
         msg = "";
     }
     msg += "\n";
-    
-    if(verbose) cout << "User unknown @ address "+ip+":"+port+" made a LMB request\n";
+
+    if(verbose) cout << "User unknown made a SRC request from "+ip+":"+port+"\n";
     return msg;
 }
